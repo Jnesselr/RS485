@@ -64,6 +64,12 @@
     "algorithm": "cpp",
     "functional": "cpp",
     "iterator": "cpp",
-    "utility": "cpp"
+    "utility": "cpp",
+    "unordered_set": "cpp",
+    "__tree": "cpp",
+    "iomanip": "cpp",
+    "iostream": "cpp",
+    "map": "cpp",
+    "set": "cpp"
   }
 }
