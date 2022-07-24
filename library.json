@@ -19,5 +19,8 @@
   "dependencies": {
   },
   "frameworks": "arduino",
-  "platforms": "*"
+  "platforms": "*",
+  "exclude": [
+    "test"
+  ]
 }
