@@ -58,14 +58,14 @@ WriteStatus RS485BusBase::write(const unsigned char& writeValue) {
   }
 }
 
-int RS485BusBase::available() {
+int RS485BusBase::available() const {
   if(full) {
     return readBufferSize;
   }
   return ((tail - head) + readBufferSize) % readBufferSize;
 }
 
-bool RS485BusBase::isBufferFull() {
+bool RS485BusBase::isBufferFull() const {
   return full;
 }
 
@@ -89,7 +89,7 @@ void RS485BusBase::putByteInBuffer(const unsigned char& value) {
   }
 }
 
-const int RS485BusBase::operator[](const int& index) {
+const int RS485BusBase::operator[](const int& index) const {
   if (index >= available()) {
     return -1;
   }
