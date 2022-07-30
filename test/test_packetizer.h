@@ -8,6 +8,7 @@
 namespace PacketizerTest {
   const uint8_t readEnablePin = 13;
   const uint8_t writeEnablePin = 14;
+  
   void setUpArduinoFake() {
     When(Method(ArduinoFake(), pinMode)).AlwaysReturn();
     When(Method(ArduinoFake(), digitalWrite)).AlwaysReturn();

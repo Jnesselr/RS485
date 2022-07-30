@@ -21,22 +21,22 @@ class RS485BusBase {
 public:
   explicit RS485BusBase(ReadWriteBuffer& buffer, int readEnablePin, int writeEnablePin);
 
-  virtual int bufferSize() = 0;
+  virtual int bufferSize() const = 0;
 
   WriteStatus write(const unsigned char& value);
 
-  int available();
-  bool isBufferFull();
+  int available() const;
+  bool isBufferFull() const;
   int fetch();  // Returns how many bytes were fetched
 
-  const int operator[](const int& index);
+  const int operator[](const int& index) const;
 
   void setReadBackDelayMs(int milliseconds);
   void setReadBackRetries(int retryCount);
 
 protected:
   virtual void setByte(const int& index, const unsigned char value) = 0;
-  virtual const unsigned char getByte(const int& index) = 0;
+  virtual const unsigned char getByte(const int& index) const = 0;
   int readBufferSize;
 
 private:

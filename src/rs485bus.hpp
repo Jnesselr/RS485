@@ -7,11 +7,11 @@ class RS485Bus: public RS485BusBase {
 public:
   RS485Bus(ReadWriteBuffer& buffer, int readEnablePin, int writeEnablePin);
 
-  int bufferSize();
+  int bufferSize() const;
 
 protected:
   virtual void setByte(const int& index, const unsigned char value);
-  virtual const unsigned char getByte(const int& index);
+  virtual const unsigned char getByte(const int& index) const;
 
 private:
   unsigned char readBuffer[BufferSize];
@@ -25,7 +25,7 @@ RS485Bus<BufferSize>::RS485Bus(ReadWriteBuffer& buffer, int readEnablePin, int w
   }
 
 template<int BufferSize>
-int RS485Bus<BufferSize>::bufferSize() {
+int RS485Bus<BufferSize>::bufferSize() const {
   return BufferSize;
 }
 
@@ -35,6 +35,6 @@ void RS485Bus<BufferSize>::setByte(const int& index, const unsigned char value) 
 }
 
 template<int BufferSize>
-const unsigned char RS485Bus<BufferSize>::getByte(const int& index) {
+const unsigned char RS485Bus<BufferSize>::getByte(const int& index) const {
   return readBuffer[index];
 }
