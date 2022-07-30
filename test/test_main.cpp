@@ -6,6 +6,7 @@
 
 #include "test_assertable_buffer.h"
 #include "test_rs485bus.h"
+#include "test_packetizer.h"
 
 #define RUN_TEST_GROUP(TEST) \
     if (!std::getenv("TEST_GROUP") || (strcmp(#TEST, std::getenv("TEST_GROUP")) == 0)) { \
@@ -23,6 +24,7 @@ int main(int argc, char **argv)
 
     RUN_TEST_GROUP(AssertableBufferTest);
     RUN_TEST_GROUP(RS485BusTest);
+    RUN_TEST_GROUP(PacketizerTest);
 
     UNITY_END();
 
