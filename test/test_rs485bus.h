@@ -355,6 +355,80 @@ namespace RS485BusTest {
     TEST_ASSERT_EQUAL_INT(-1, bus[2]);
   }
 
+  void test_read_calls_fetch() {
+    AssertableBuffer buffer;
+
+    setUpArduinoFake();
+
+    buffer << 1 << 2 << 3;
+    RS485Bus<8> bus(buffer, readEnablePin, writeEnablePin);
+
+    // We haven't called fetch internally
+    TEST_ASSERT_EQUAL_INT(0, bus.available());
+
+    TEST_ASSERT_EQUAL_INT(1, bus.read());
+    TEST_ASSERT_EQUAL_INT(2, bus.available());
+
+    TEST_ASSERT_EQUAL_INT(2, bus.read());
+    TEST_ASSERT_EQUAL_INT(1, bus.available());
+
+    TEST_ASSERT_EQUAL_INT(3, bus.read());
+    TEST_ASSERT_EQUAL_INT(0, bus.available());
+
+    TEST_ASSERT_EQUAL_INT(-1, bus.read());
+    TEST_ASSERT_EQUAL_INT(0, bus.available());
+  }
+
+  void test_read_fetches_even_if_not_all_bytes_have_been_read() {
+    AssertableBuffer buffer;
+
+    setUpArduinoFake();
+
+    buffer << 1;
+    RS485Bus<8> bus(buffer, readEnablePin, writeEnablePin);
+
+    bus.fetch();
+    buffer << 2 << 3;
+    TEST_ASSERT_EQUAL_INT(1, bus.available());
+
+    TEST_ASSERT_EQUAL_INT(1, bus.read());
+    TEST_ASSERT_EQUAL_INT(2, bus.available());
+
+    TEST_ASSERT_EQUAL_INT(2, bus.read());
+    TEST_ASSERT_EQUAL_INT(1, bus.available());
+
+    TEST_ASSERT_EQUAL_INT(3, bus.read());
+    TEST_ASSERT_EQUAL_INT(0, bus.available());
+
+    TEST_ASSERT_EQUAL_INT(-1, bus.read());
+    TEST_ASSERT_EQUAL_INT(0, bus.available());
+  }
+
+  void test_read_clears_full_flag() {
+    AssertableBuffer buffer;
+
+    setUpArduinoFake();
+
+    buffer << 1 << 2;
+    RS485Bus<2> bus(buffer, readEnablePin, writeEnablePin);
+
+    bus.fetch();
+    TEST_ASSERT_EQUAL_INT(2, bus.available());
+    TEST_ASSERT_TRUE(bus.isBufferFull());
+
+    TEST_ASSERT_EQUAL_INT(1, bus.read());
+    TEST_ASSERT_EQUAL_INT(1, bus.available());
+    TEST_ASSERT_FALSE(bus.isBufferFull());
+
+    TEST_ASSERT_EQUAL_INT(2, bus.read());
+    TEST_ASSERT_EQUAL_INT(0, bus.available());
+    TEST_ASSERT_FALSE(bus.isBufferFull());
+
+    TEST_ASSERT_EQUAL_INT(-1, bus.read());
+    TEST_ASSERT_EQUAL_INT(0, bus.available());
+    TEST_ASSERT_FALSE(bus.isBufferFull());
+  }
+
   // TODO Can we test for the weird edge case of seeing a byte before we expect it and it's the same as ours but not ours?
 
   void run_tests() {
@@ -372,5 +446,8 @@ namespace RS485BusTest {
     RUN_TEST(test_writing_a_byte_that_eventually_returns_correct_value);
     RUN_TEST(test_write_when_buffer_becomes_full);
     RUN_TEST(test_write_when_buffer_becomes_full_but_no_more_is_available);
+    RUN_TEST(test_read_calls_fetch);
+    RUN_TEST(test_read_fetches_even_if_not_all_bytes_have_been_read);
+    RUN_TEST(test_read_clears_full_flag);
   }
 }

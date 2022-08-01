@@ -80,6 +80,19 @@ int RS485BusBase::fetch() {
   return bytesRead;
 }
 
+int RS485BusBase::read() {
+  fetch();
+  if(available() == 0) {
+    return -1;
+  }
+
+  int value = getByte(head);
+  head = (head + 1) % readBufferSize;
+  full = false;
+
+  return value;
+}
+
 void RS485BusBase::putByteInBuffer(const unsigned char& value) {
   setByte(tail, value);
   tail = (tail + 1) % readBufferSize;
