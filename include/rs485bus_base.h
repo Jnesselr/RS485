@@ -8,7 +8,8 @@ enum class WriteStatus {
   UNEXPECTED_EXTRA_BYTES,   // Read extra bytes back but eventually found the one we wrote. See notes below.
   NO_READ_TIMEOUT,          // No bytes read at all, timed out waiting
   FAILED_READ_BACK,         // Read some bytes but failed to see our byte
-  READ_BUFFER_FULL          // Our internal buffer is full. Byte was still written, but we won't check it. See notes below.
+  READ_BUFFER_FULL,         // Our internal buffer is full. Byte was still written, but we won't check it. See notes below.
+  NO_WRITE_BUFFER_FULL      // Exactly the same as above, but we could tell the buffer was full before we even thought about writing a byte.
 };
 
 /*

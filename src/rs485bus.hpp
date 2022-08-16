@@ -31,10 +31,10 @@ int RS485Bus<BufferSize>::bufferSize() const {
 
 template<int BufferSize>
 void RS485Bus<BufferSize>::setByte(const int& bufferIndex, const unsigned char value) {
-  readBuffer[index] = value;
+  readBuffer[bufferIndex] = value;
 }
 
 template<int BufferSize>
 const unsigned char RS485Bus<BufferSize>::getByte(const int& bufferIndex) const {
-  return readBuffer[index];
+  return readBuffer[bufferIndex];
 }
