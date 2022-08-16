@@ -11,6 +11,11 @@ RS485BusBase::RS485BusBase(ReadWriteBuffer& buffer, int readEnablePin, int write
 }
 
 WriteStatus RS485BusBase::write(const unsigned char& writeValue) {
+  fetch();
+  if(full) {
+    return WriteStatus::NO_WRITE_BUFFER_FULL;
+  }
+
   digitalWrite(writeEnablePin, HIGH);
 
   buffer.write(writeValue);
@@ -71,7 +76,7 @@ bool RS485BusBase::isBufferFull() const {
 
 int RS485BusBase::fetch() {
   int bytesRead = 0;
-  while(buffer.available() > 0 && !full) {
+  while(!full && buffer.available() > 0) {
     bytesRead++;
 
     putByteInBuffer(buffer.read());

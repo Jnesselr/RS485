@@ -137,9 +137,12 @@ namespace RS485BusTest {
     verifyRS485BusStartupArduinoFake();
 
     buffer << 0x37;  // Next byte to be read
+    When(Method(spy, available)).Return(0, 1);
+
     TEST_ASSERT_EQUAL_INT(WriteStatus::OK, bus.write(0x37));
 
     Verify(
+      Method(spy, available),
       Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
       Method(spy, write).Using(0x37),
       Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
@@ -160,14 +163,18 @@ namespace RS485BusTest {
     When(Method(ArduinoFake(), delay)).AlwaysReturn();
 
     buffer << 0x21;  // Next byte to be read
+    When(Method(spy, available)).Return(0, 1, 0);
+
     TEST_ASSERT_EQUAL_INT(WriteStatus::FAILED_READ_BACK, bus.write(0x37));
 
     Verify(
+      Method(spy, available),
       Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
       Method(spy, write).Using(0x37),
       Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
       Method(spy, available),
-      Method(spy, read)
+      Method(spy, read),
+      Method(spy, available)
     ).Once();
   }
 
@@ -182,15 +189,20 @@ namespace RS485BusTest {
     verifyRS485BusStartupArduinoFake();
 
     buffer << 0x21 << 0x05 << 0x37;  // Next byte to be read
+    When(Method(spy, available)).Return(0, 3, 2, 1, 0);
+
     TEST_ASSERT_EQUAL_INT(WriteStatus::UNEXPECTED_EXTRA_BYTES, bus.write(0x37));
 
     Verify(
+      Method(spy, available), // Returns 0
       Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
       Method(spy, write).Using(0x37),
       Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
-      Method(spy, available),
+      Method(spy, available), // Returns 3
       Method(spy, read),
+      Method(spy, available), // Returns 2
       Method(spy, read),
+      Method(spy, available), // Returns 1
       Method(spy, read)
     ).Once();
 
@@ -214,6 +226,7 @@ namespace RS485BusTest {
     TEST_ASSERT_EQUAL_INT(WriteStatus::NO_READ_TIMEOUT, bus.write(0x37));
 
     Verify(
+      Method(spy, available),
       Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
       Method(spy, write).Using(0x37),
       Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
@@ -238,6 +251,7 @@ namespace RS485BusTest {
     TEST_ASSERT_EQUAL_INT(WriteStatus::NO_READ_TIMEOUT, bus.write(0x37));
 
     Verify(
+      Method(spy, available),
       Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
       Method(spy, write).Using(0x37),
       Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
@@ -261,7 +275,6 @@ namespace RS485BusTest {
 
     setUpArduinoFake();
 
-    buffer << 0x21 << 0x37;
     RS485Bus<8> bus(buffer, readEnablePin, writeEnablePin);
     bus.setReadBackDelayMs(7);
     bus.setReadBackRetries(1);
@@ -269,21 +282,24 @@ namespace RS485BusTest {
     verifyRS485BusStartupArduinoFake();
 
     When(Method(ArduinoFake(), delay)).AlwaysReturn();
-    When(Method(spy, available)).Return(0, 1, 0, 1);
+
+    buffer << 0x21 << 0x37;
+    When(Method(spy, available)).Return(0, 0, 1, 0, 1);
 
     TEST_ASSERT_EQUAL_INT(WriteStatus::UNEXPECTED_EXTRA_BYTES, bus.write(0x37));
 
     Verify(
+      Method(spy, available), // Returns 0
       Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
       Method(spy, write).Using(0x37),
       Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
-      Method(spy, available),
+      Method(spy, available), // Returns 0
       Method(ArduinoFake(), delay).Using(7),
-      Method(spy, available),
+      Method(spy, available), // Returns 1
       Method(spy, read),
-      Method(spy, available),
+      Method(spy, available), // Returns 0
       Method(ArduinoFake(), delay).Using(7),
-      Method(spy, available),
+      Method(spy, available), // Returns 1
       Method(spy, read)
     ).Once();
 
@@ -291,7 +307,7 @@ namespace RS485BusTest {
     TEST_ASSERT_EQUAL_INT(-1, bus[1]);
   }
 
-  void test_write_when_buffer_becomes_full() {
+  void test_write_when_buffer_should_already_be_full() {
     AssertableBuffer buffer;
     Mock<AssertableBuffer> spy = buffer.spy();
 
@@ -305,22 +321,61 @@ namespace RS485BusTest {
 
     When(Method(ArduinoFake(), delay)).AlwaysReturn();
 
+    TEST_ASSERT_EQUAL_INT(WriteStatus::NO_WRITE_BUFFER_FULL, bus.write(0x37));
+
+    Verify(
+      Method(spy, available),
+      Method(spy, read),
+      Method(spy, available),
+      Method(spy, read)
+    ).Once();
+
+    Verify(Method(spy, write)).Never();
+    VerifyNoOtherInvocations(Method(ArduinoFake(), digitalWrite));
+
+    TEST_ASSERT_EQUAL_INT(0x21, bus[0]);
+    TEST_ASSERT_EQUAL_INT(0x30, bus[1]);
+    TEST_ASSERT_EQUAL_INT(-1, bus[2]);
+    TEST_ASSERT_EQUAL_INT(1, buffer.available()); // 1 byte style available
+  }
+
+  /**
+   * Simulate what would happen if no bytes appeared available, so we wrote our byte, but then
+   * proceeded to see other new bytes that filled the buffer.
+   */
+  void test_write_when_buffer_becomes_full() {
+    AssertableBuffer buffer;
+    Mock<AssertableBuffer> spy = buffer.spy();
+
+    setUpArduinoFake();
+
+    buffer << 0x21 << 0x30 << 0x37;
+    RS485Bus<2> bus(buffer, readEnablePin, writeEnablePin);
+    bus.setReadBackRetries(0);
+
+    verifyRS485BusStartupArduinoFake();
+
+    When(Method(ArduinoFake(), delay)).AlwaysReturn();
+    When(Method(spy, available)).Return(0, 3, 2, 1);
+
     TEST_ASSERT_EQUAL_INT(WriteStatus::READ_BUFFER_FULL, bus.write(0x37));
 
     Verify(
+      Method(spy, available), // Returns 0
       Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
       Method(spy, write).Using(0x37),
       Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
-      Method(spy, available),
+      Method(spy, available), // Returns 3
       Method(spy, read),
-      Method(spy, available),
+      Method(spy, available), // Returns 2
       Method(spy, read),
-      Method(spy, available)
+      Method(spy, available) // Returns 1
     ).Once();
 
     TEST_ASSERT_EQUAL_INT(0x21, bus[0]);
     TEST_ASSERT_EQUAL_INT(0x30, bus[1]);
     TEST_ASSERT_EQUAL_INT(-1, bus[2]);
+    TEST_ASSERT_EQUAL_INT(1, buffer.available()); // 1 byte style available
   }
 
   void test_write_when_buffer_becomes_full_but_no_more_is_available() {
@@ -336,18 +391,20 @@ namespace RS485BusTest {
     verifyRS485BusStartupArduinoFake();
 
     When(Method(ArduinoFake(), delay)).AlwaysReturn();
+    When(Method(spy, available)).Return(0, 2, 1, 0);
 
     TEST_ASSERT_EQUAL_INT(WriteStatus::FAILED_READ_BACK, bus.write(0x37));
 
     Verify(
+      Method(spy, available), // Returns 0
       Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
       Method(spy, write).Using(0x37),
       Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
-      Method(spy, available),
+      Method(spy, available), // Returns 2
       Method(spy, read),
-      Method(spy, available),
+      Method(spy, available), // Returns 1
       Method(spy, read),
-      Method(spy, available)
+      Method(spy, available) // Returns 0
     ).Once();
 
     TEST_ASSERT_EQUAL_INT(0x21, bus[0]);
@@ -444,6 +501,7 @@ namespace RS485BusTest {
     RUN_TEST(test_writing_a_byte_when_no_new_byte_is_available);
     RUN_TEST(test_writing_a_byte_when_no_new_byte_is_available_with_delays);
     RUN_TEST(test_writing_a_byte_that_eventually_returns_correct_value);
+    RUN_TEST(test_write_when_buffer_should_already_be_full);
     RUN_TEST(test_write_when_buffer_becomes_full);
     RUN_TEST(test_write_when_buffer_becomes_full_but_no_more_is_available);
     RUN_TEST(test_read_calls_fetch);
