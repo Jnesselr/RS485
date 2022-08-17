@@ -11,9 +11,23 @@ RS485BusBase::RS485BusBase(ReadWriteBuffer& buffer, int readEnablePin, int write
 }
 
 WriteStatus RS485BusBase::write(const unsigned char& writeValue) {
-  fetch();
+  bool anyBytesFetched = fetch() > 0;
+  bool newBytesFetched = anyBytesFetched;
+  while(newBytesFetched) {
+    for(int i=0; i <= preFetchRetryCount; i++) {
+      delay(preFetchDelayMilliseconds);
+
+      newBytesFetched = fetch() > 0;
+      if(newBytesFetched) {
+        break;
+      }
+    }
+  }
+
   if(full) {
     return WriteStatus::NO_WRITE_BUFFER_FULL;
+  } else if(anyBytesFetched) {
+    return WriteStatus::NO_WRITE_NEW_BYTES;
   }
 
   digitalWrite(writeEnablePin, HIGH);
@@ -121,4 +135,11 @@ void RS485BusBase::setReadBackDelayMs(int milliseconds) {
 
 void RS485BusBase::setReadBackRetries(int retryCount) {
   readBackRetryCount =  retryCount > 0 ? retryCount : 0;
+}
+
+void RS485BusBase::setPreFetchDelayMs(int milliseconds) {
+  preFetchDelayMilliseconds = milliseconds > 0 ? milliseconds : 0;
+}
+void RS485BusBase::setPreFetchRetries(int retryCount) {
+  preFetchRetryCount =  retryCount > 0 ? retryCount : 0;
 }

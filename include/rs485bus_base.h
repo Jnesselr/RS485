@@ -9,7 +9,8 @@ enum class WriteStatus {
   NO_READ_TIMEOUT,          // No bytes read at all, timed out waiting
   FAILED_READ_BACK,         // Read some bytes but failed to see our byte
   READ_BUFFER_FULL,         // Our internal buffer is full. Byte was still written, but we won't check it. See notes below.
-  NO_WRITE_BUFFER_FULL      // Exactly the same as above, but we could tell the buffer was full before we even thought about writing a byte.
+  NO_WRITE_NEW_BYTES,       // We received new bytes on the bus with one of our fetch calls before writing. To avoid interrupting a message, we will not write.
+  NO_WRITE_BUFFER_FULL      // Exactly the same as READ_BUFFER_FULL, but we could tell the buffer was full before we decided to write a byte.
 };
 
 /*
@@ -35,6 +36,8 @@ public:
 
   void setReadBackDelayMs(int milliseconds);
   void setReadBackRetries(int retryCount);
+  void setPreFetchDelayMs(int milliseconds);
+  void setPreFetchRetries(int retryCount);
 
 protected:
   virtual void setByte(const int& bufferIndex, const unsigned char value) = 0;
@@ -54,4 +57,6 @@ private:
 
   int readBackRetryMilliseconds = 0;
   int readBackRetryCount = 0;
+  int preFetchDelayMilliseconds = 0;
+  int preFetchRetryCount = 0;
 };
