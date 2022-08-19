@@ -121,7 +121,7 @@ void RS485BusBase::putByteInBuffer(const unsigned char& value) {
   }
 }
 
-const int RS485BusBase::operator[](const int& index) const {
+const int RS485BusBase::operator[](const unsigned int& index) const {
   if (index >= available()) {
     return -1;
   }

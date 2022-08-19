@@ -23,10 +23,10 @@ int main(int argc, char **argv)
 {
     UNITY_BEGIN();
 
-    RUN_TEST_GROUP(AssertableBufferTest);
+    RUN_TEST_GROUP(AssertableBufferTest); // Tests a class used in tests for future tests
     RUN_TEST_GROUP(RS485BusTest);
+    RUN_TEST_GROUP(PacketMatchingBytesTest); // Tests a class used in tests for future tests
     RUN_TEST_GROUP(PacketizerTest);
-    RUN_TEST_GROUP(PacketMatchingBytesTest);
 
     UNITY_END();
 
