@@ -10,8 +10,8 @@ public:
   int bufferSize() const;
 
 protected:
-  virtual void setByte(const int& bufferIndex, const unsigned char value);
-  virtual const unsigned char getByte(const int& bufferIndex) const;
+  virtual void setByte(const unsigned int& bufferIndex, const unsigned char value);
+  virtual const unsigned char getByte(const unsigned int& bufferIndex) const;
 
 private:
   unsigned char readBuffer[BufferSize];
@@ -30,11 +30,11 @@ int RS485Bus<BufferSize>::bufferSize() const {
 }
 
 template<int BufferSize>
-void RS485Bus<BufferSize>::setByte(const int& bufferIndex, const unsigned char value) {
+void RS485Bus<BufferSize>::setByte(const unsigned int& bufferIndex, const unsigned char value) {
   readBuffer[bufferIndex] = value;
 }
 
 template<int BufferSize>
-const unsigned char RS485Bus<BufferSize>::getByte(const int& bufferIndex) const {
+const unsigned char RS485Bus<BufferSize>::getByte(const unsigned int& bufferIndex) const {
   return readBuffer[bufferIndex];
 }

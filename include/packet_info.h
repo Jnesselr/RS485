@@ -9,6 +9,7 @@ enum class PacketStatus {
 };
 
 class PacketInfo {
+public:
   /**
    * This method overall is pretty simple. You can inspect the bytes on the bus from startIndex up to and including endIndex.
    * - Return YES only if the packet starts at startIndex. Update endIndex to be the end of the packet.
@@ -27,5 +28,5 @@ class PacketInfo {
    * In an ideal world, the next byte after the updated endIndex, when PacketInfo returns YES, would be the start of a new packet.
    * Unfortunately, given collisions and other issues, that may not be the case. Do not make any assumptions or try to "read ahead".
    */
-  virtual PacketStatus isPacket(const RS485BusBase& bus, const int& startIndex, int& endIndex) = 0;
+  virtual PacketStatus isPacket(const RS485BusBase& bus, const int& startIndex, int& endIndex) const = 0;
 };

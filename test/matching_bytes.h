@@ -4,5 +4,5 @@
 
 class PacketMatchingBytes: public PacketInfo {
 public:
-  PacketStatus isPacket(const RS485BusBase& bus, const int& startIndex, int& endIndex);
+  PacketStatus isPacket(const RS485BusBase& bus, const int& startIndex, int& endIndex) const;
 };

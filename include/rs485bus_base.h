@@ -32,7 +32,7 @@ public:
   int fetch();  // Returns how many bytes were fetched
   int read();  // Reads one byte and returns it. Returns -1 if no byte is read
 
-  const int operator[](const int& index) const;
+  const int operator[](const unsigned int& index) const;
 
   void setReadBackDelayMs(int milliseconds);
   void setReadBackRetries(int retryCount);
@@ -40,8 +40,8 @@ public:
   void setPreFetchRetries(int retryCount);
 
 protected:
-  virtual void setByte(const int& bufferIndex, const unsigned char value) = 0;
-  virtual const unsigned char getByte(const int& bufferIndex) const = 0;
+  virtual void setByte(const unsigned int& bufferIndex, const unsigned char value) = 0;
+  virtual const unsigned char getByte(const unsigned int& bufferIndex) const = 0;
   int readBufferSize;
 
 private:
