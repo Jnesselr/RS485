@@ -9,7 +9,7 @@
 
 using namespace fakeit;
 
-namespace PacketizerTest {
+namespace PacketizerReadTest {
   const uint8_t readEnablePin = 13;
   const uint8_t writeEnablePin = 14;
   

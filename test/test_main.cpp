@@ -6,7 +6,7 @@
 
 #include "test_assertable_buffer.h"
 #include "test_rs485bus.h"
-#include "test_packetizer.h"
+#include "test_packetizer_read.h"
 #include "test_matching_bytes.h"
 
 #define RUN_TEST_GROUP(TEST) \
@@ -26,7 +26,7 @@ int main(int argc, char **argv)
     RUN_TEST_GROUP(AssertableBufferTest); // Tests a class used in tests for future tests
     RUN_TEST_GROUP(RS485BusTest);
     RUN_TEST_GROUP(PacketMatchingBytesTest); // Tests a class used in tests for future tests
-    RUN_TEST_GROUP(PacketizerTest);
+    RUN_TEST_GROUP(PacketizerReadTest);
 
     UNITY_END();
 
