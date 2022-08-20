@@ -15,53 +15,64 @@ bool Packetizer::hasPacket() {
     return true;  // We have a packet already, no need to do any searching
   }
 
-  bus->fetch();
+  unsigned long startMillis = millis();
 
+  while(true) {
+    int bytesFetched = bus->fetch();
 
-
-  if(lastBusAvailable == bus->available()) {
-    return false; // No new bytes are available, so no new packet is available
-  }
-
-  lastBusAvailable = bus->available();
-
-  for(startIndex = 0; startIndex < lastBusAvailable; startIndex++) {
-    bool alreadyChecked = false;
-    
-    if(startIndex < (sizeof(recheckBitmap) * 8)) {
-      alreadyChecked = (recheckBitmap & (1L << startIndex)) > 0;
-    }
-    if(alreadyChecked) {
-      continue;
+    if(lastBusAvailable == bus->available()) {
+      return false; // No new bytes are available, so no new packet is available
     }
 
-    int endIndex = lastBusAvailable - 1;
-    PacketStatus status = packetInfo->isPacket(*bus, startIndex, endIndex);
+    lastBusAvailable = bus->available();
 
-    if(status == PacketStatus::NO) {
+    for(startIndex = 0; startIndex < lastBusAvailable; startIndex++) {
+      bool alreadyChecked = false;
+      
       if(startIndex < (sizeof(recheckBitmap) * 8)) {
-        recheckBitmap |= (1L << startIndex);
+        alreadyChecked = (recheckBitmap & (1L << startIndex)) > 0;
       }
-      // Remove any "no" byte at the start
-      if(startIndex == 0) {
-        eatOneByte();
-      }
-    }
-    else if(status == PacketStatus::YES) {
-      packetSize = endIndex - startIndex + 1;
-
-      // Clear out all bytes before startIndex
-      while(startIndex > 0) {
-        eatOneByte();
+      if(alreadyChecked) {
+        // It's very possible to have already checked a byte
+        if(startIndex == 0) {
+          eatOneByte();
+        }
+        continue;
       }
 
-      return true;
-    }
-    else if(status == PacketStatus::NOT_ENOUGH_BYTES) {
-      // Remove any "not enough bytes" byte at the start, only if the buffer is full
-      if(startIndex == 0 && bus->isBufferFull()) {
-        eatOneByte();
+      int endIndex = lastBusAvailable - 1;
+      PacketStatus status = packetInfo->isPacket(*bus, startIndex, endIndex);
+
+      if(status == PacketStatus::NO) {
+        if(startIndex < (sizeof(recheckBitmap) * 8)) {
+          recheckBitmap |= (1L << startIndex);
+        }
+        // Remove any "no" byte at the start
+        if(startIndex == 0) {
+          eatOneByte();
+        }
       }
+      else if(status == PacketStatus::YES) {
+        packetSize = endIndex - startIndex + 1;
+
+        // Clear out all bytes before startIndex
+        while(startIndex > 0) {
+          eatOneByte();
+        }
+
+        return true;
+      }
+      else if(status == PacketStatus::NOT_ENOUGH_BYTES) {
+        // Remove any "not enough bytes" byte at the start, only if the buffer is full
+        if(startIndex == 0 && bus->isBufferFull()) {
+          eatOneByte();
+        }
+      }
+    }
+
+    unsigned long currentMillis = millis();
+    if(currentMillis - startMillis >= maxReadTimeout) {
+      return false;  // We timed out trying to read a valid packet
     }
   }
 
@@ -84,4 +95,8 @@ void Packetizer::clearPacket() {
 
   // Since nothing after our packet got checked, we reset this to 0 so it forcefully check new data
   lastBusAvailable = 0;
+}
+
+void Packetizer::setMaxReadTimeout(unsigned long maxReadTimeout) {
+  this->maxReadTimeout = maxReadTimeout;
 }
