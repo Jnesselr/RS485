@@ -32,6 +32,7 @@ namespace PacketizerTest {
     RS485Bus<8> bus(buffer, readEnablePin, writeEnablePin);
     PacketMatchingBytes packetInfo;
     Packetizer packetizer(bus, packetInfo);
+    When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
 
     TEST_ASSERT_FALSE(packetizer.hasPacket());
     TEST_ASSERT_EQUAL_INT(0, packetizer.packetLength());
@@ -43,6 +44,7 @@ namespace PacketizerTest {
     RS485Bus<8> bus(buffer, readEnablePin, writeEnablePin);
     PacketMatchingBytes packetInfo;
     Packetizer packetizer(bus, packetInfo);
+    When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
 
     buffer << 0x01 << 0x02 << 0x03 << 0x02 << 0x04;
 
@@ -62,7 +64,6 @@ namespace PacketizerTest {
 
     packetizer.clearPacket();
     TEST_ASSERT_FALSE(packetizer.hasPacket());
-    TEST_ASSERT_FALSE(packetizer.hasPacket());
     TEST_ASSERT_EQUAL_INT(0, packetizer.packetLength());
     TEST_ASSERT_EQUAL_INT(1, bus.available());
     TEST_ASSERT_EQUAL_INT(0x04, bus[0]);
@@ -75,6 +76,7 @@ namespace PacketizerTest {
     RS485Bus<8> bus(buffer, readEnablePin, writeEnablePin);
     PacketMatchingBytes packetInfo;
     Packetizer packetizer(bus, packetInfo);
+    When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
 
     buffer << 0x01 << 0x03 << 0x02 << 0x05;
 
@@ -97,6 +99,7 @@ namespace PacketizerTest {
     RS485Bus<2> bus(buffer, readEnablePin, writeEnablePin);
     PacketMatchingBytes packetInfo;
     Packetizer packetizer(bus, packetInfo);
+    When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
 
     buffer << 0x02 << 0x04;
 
@@ -129,6 +132,7 @@ namespace PacketizerTest {
     PacketMatchingBytes packetInfo;
     Mock<PacketMatchingBytes> spy = spyMatchingBytes(packetInfo);
     Packetizer packetizer(bus, packetInfo);
+    When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
 
     // AWFUL HACK ALERT - related: https://github.com/eranpeer/FakeIt/issues/274
     // Essentially, we can't verify captured arguments. So we have an array to verify if we've called in using the correct parameters.
@@ -279,6 +283,7 @@ namespace PacketizerTest {
     PacketMatchingBytes packetInfo;
     Mock<PacketMatchingBytes> spy = spyMatchingBytes(packetInfo);
     Packetizer packetizer(bus, packetInfo);
+    When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
 
     // AWFUL HACK ALERT - related: https://github.com/eranpeer/FakeIt/issues/274
     // Essentially, we can't verify captured arguments. So we have an array to verify if we've called in using the correct parameters.
@@ -360,6 +365,79 @@ namespace PacketizerTest {
     }
   }
 
+  void test_can_get_packet_even_if_it_is_past_bus_size_if_bytes_are_shifted() {
+    AssertableBuffer buffer;
+    setUpArduinoFake();
+    RS485Bus<3> bus(buffer, readEnablePin, writeEnablePin);
+    PacketMatchingBytes packetInfo;
+    Packetizer packetizer(bus, packetInfo);
+    When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
+
+    // This format and bus size is specifically so already checked "no" bytes do get removed if they're at the beginning
+    buffer << 0x01 << 0x02 << 0x03 << 0x04 << 0x06 << 0x06;
+    /*
+    This is the worked out explanation. neb == "not enough bytes".
+
+    01 02 03 | first fetch
+    02 03 -- | "no" gets shifted, lastBusAvailable becomes 2.
+    02 03 -- | "neb" stays, buffer isn't full. 03 gets a no.
+    02 03 04 | fetch is called. lastBusAvailable (2) != bus available (3), so continue with lastBusAvailable as 3. 0x2 and 0x4 are checked
+    03 04 -- | buffer is full, so "neb" is removed. lastBusAvailable becomes 2
+    03 04 06 | fetch is called. lastBusAvailable (2) != bus available (3), so continue with lastBusAvailable as 3.
+    04 06 -- | "no" gets shifted, lastBusAvailable becomes 2
+    04 06 06 | fetch is called. lastBusAvailable (2) != bus available (3), so continue with lastBusAvailable as 3.
+    06 06 -- | "neb" 04 is removed since the buffer is full
+    06 06 -- | yes is found! 0x06 <-> 0x06 is our packet
+    */
+
+    // Ensure the bus hasn't fetched a single byte from the serial bus yet, meaning the packetizer calls fetch
+    TEST_ASSERT_EQUAL_INT(0, bus.available());
+    TEST_ASSERT_EQUAL_INT(0, packetizer.packetLength());
+
+    TEST_ASSERT_TRUE(packetizer.hasPacket());
+    TEST_ASSERT_EQUAL_INT(2, packetizer.packetLength());
+
+    TEST_ASSERT_EQUAL_INT(2, bus.available());
+    TEST_ASSERT_EQUAL_INT(0x06, bus[0]);
+    TEST_ASSERT_EQUAL_INT(0x06, bus[1]);
+    TEST_ASSERT_EQUAL_INT(-1, bus[2]);
+
+    packetizer.clearPacket();
+    TEST_ASSERT_FALSE(packetizer.hasPacket());
+    TEST_ASSERT_EQUAL_INT(0, packetizer.packetLength());
+    TEST_ASSERT_EQUAL_INT(0, bus.available());
+    TEST_ASSERT_EQUAL_INT(-1, bus[0]);
+  }
+  
+  /**
+   * This is the same setup as the test above "test_can_get_packet_even_if_it_is_past_bus_size_if_bytes_are_shifted".
+   * The big difference is that fetch must be called 4 times to get our packet whereas we make sure it "times out" after
+   * 3 calls.
+   */
+  void test_cannot_get_packet_if_timeout_is_reached() {
+    AssertableBuffer buffer;
+    setUpArduinoFake();
+    RS485Bus<3> bus(buffer, readEnablePin, writeEnablePin);
+    PacketMatchingBytes packetInfo;
+    Packetizer packetizer(bus, packetInfo);
+    packetizer.setMaxReadTimeout(200);
+
+    buffer << 0x01 << 0x02 << 0x03 << 0x04 << 0x06 << 0x06;
+    When(Method(ArduinoFake(), millis)).Return(0, 100, 200);
+
+    // Ensure the bus hasn't fetched a single byte from the serial bus yet, meaning the packetizer calls fetch
+    TEST_ASSERT_EQUAL_INT(0, bus.available());
+    TEST_ASSERT_EQUAL_INT(0, packetizer.packetLength());
+
+    TEST_ASSERT_FALSE(packetizer.hasPacket());
+    TEST_ASSERT_EQUAL_INT(0, packetizer.packetLength());
+
+    TEST_ASSERT_EQUAL_INT(2, bus.available());
+    TEST_ASSERT_EQUAL_INT(0x04, bus[0]);
+    TEST_ASSERT_EQUAL_INT(0x06, bus[1]);
+    TEST_ASSERT_EQUAL_INT(-1, bus[2]);
+  }
+
   void run_tests() {
     RUN_TEST(test_by_default_no_packets_are_available);
     RUN_TEST(test_can_get_simple_packet);
@@ -367,6 +445,8 @@ namespace PacketizerTest {
     RUN_TEST(test_not_enough_bytes_get_skipped_if_buffer_is_full);
     RUN_TEST(test_no_bytes_do_not_get_tested_again);
     RUN_TEST(test_no_bytes_past_our_limit_get_rechecked);
+    RUN_TEST(test_can_get_packet_even_if_it_is_past_bus_size_if_bytes_are_shifted);
+    RUN_TEST(test_cannot_get_packet_if_timeout_is_reached);
   }
 }
 

@@ -10,7 +10,8 @@ public:
   bool hasPacket();
   int packetLength();
   void clearPacket();
-  unsigned long recheckBitmap = 0;
+
+  void setMaxReadTimeout(unsigned long maxReadTimeout);
 private:
   inline void eatOneByte();
 
@@ -20,4 +21,7 @@ private:
 
   int lastBusAvailable = 0;
   int startIndex = 0;
+  unsigned long recheckBitmap = 0;
+
+  unsigned long maxReadTimeout = -1;  // Just go forever until you find something
 };
