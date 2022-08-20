@@ -10,6 +10,7 @@ public:
   bool hasPacket();
   int packetLength();
   void clearPacket();
+  unsigned long recheckBitmap = 0;
 private:
   inline void eatOneByte();
 
@@ -17,7 +18,6 @@ private:
   const PacketInfo* packetInfo;
   int packetSize = 0;
 
-  int recheckBitmap = 0;
   int lastBusAvailable = 0;
   int startIndex = 0;
 };

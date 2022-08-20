@@ -62,6 +62,7 @@ namespace PacketizerTest {
 
     packetizer.clearPacket();
     TEST_ASSERT_FALSE(packetizer.hasPacket());
+    TEST_ASSERT_FALSE(packetizer.hasPacket());
     TEST_ASSERT_EQUAL_INT(0, packetizer.packetLength());
     TEST_ASSERT_EQUAL_INT(1, bus.available());
     TEST_ASSERT_EQUAL_INT(0x04, bus[0]);
@@ -119,8 +120,8 @@ namespace PacketizerTest {
    * Because it's long and hard to read, the verification sections are broken up by comments that start with "--".
    */
   void test_no_bytes_do_not_get_tested_again() {
-    constexpr size_t ulSize = sizeof(unsigned long);  // Needs to match the date type used for recheckBitmap in Packetizer
-    constexpr int bufferSize = uSize + 5;  // unsigned long size + 3 bytes we add + 2 just to be safe
+    constexpr size_t ulSize = sizeof(unsigned long) * 8;  // Needs to match the date type used for recheckBitmap in Packetizer
+    constexpr int bufferSize = ulSize + 5;  // unsigned long size + 3 bytes we add + 2 just to be safe
 
     AssertableBuffer buffer;
     setUpArduinoFake();
@@ -228,6 +229,26 @@ namespace PacketizerTest {
     TEST_ASSERT_FALSE_MESSAGE(wasCalledAssert[ulSize+1], "No bytes after valid packet should have been tested");
     TEST_ASSERT_FALSE_MESSAGE(wasCalledAssert[ulSize+2], "No bytes after valid packet should have been tested");
 
+    // -- Nothing should have changed, but we want to verify we can still see the packet with nothing having been called
+
+    // Reset everthing
+    memset(wasCalledAssert, false, sizeof(bool) * bufferSize);
+    memset(endIndexAssert, 0, sizeof(int) * bufferSize);
+
+    // Call our hasPacket method
+    TEST_ASSERT_TRUE(packetizer.hasPacket());
+    TEST_ASSERT_EQUAL_INT(3, packetizer.packetLength());
+    TEST_ASSERT_EQUAL_INT(5, bus.available());  // Everything else got cleared out but the packet and our two extra bytes
+
+    // Verify nothing was called, meaning the packetizer cached the reuslt from last time
+    for(int i = 0; i < ulSize; i++) {
+      message = "Was called for start index " + std::to_string(i) + " when it should not have been";
+      TEST_ASSERT_FALSE_MESSAGE(wasCalledAssert[i], message.c_str());
+
+      message = "Bad end index for start index " + std::to_string(i);
+      TEST_ASSERT_EQUAL_INT_MESSAGE(0, endIndexAssert[i], message.c_str());
+    }
+
     // -- Clearing the packet will result in (ulSize + 1) and (ulSize + 2) being on the bus. The first is "no" so goes away. We do this step to make sure previous times where things were not re-checked will get re-checked again.
     packetizer.clearPacket();
     TEST_ASSERT_EQUAL_INT(2, bus.available());  // (ulSize + 1) and (ulSize + 2)
@@ -235,8 +256,6 @@ namespace PacketizerTest {
     // Reset everthing
     memset(wasCalledAssert, false, sizeof(bool) * bufferSize);
     memset(endIndexAssert, 0, sizeof(int) * bufferSize);
-
-    TEST_ASSERT_EQUAL_INT(0, packetizer.recheckBitmap);
 
     // Call our hasPacket method
     TEST_ASSERT_FALSE(packetizer.hasPacket());
@@ -250,12 +269,104 @@ namespace PacketizerTest {
     TEST_ASSERT_EQUAL_INT(-1, bus[1]);
   }
 
+  void test_no_bytes_past_our_limit_get_rechecked() {
+    constexpr size_t ulSize = sizeof(unsigned long) * 8;  // Needs to match the date type used for recheckBitmap in Packetizer
+    constexpr int bufferSize = ulSize + 3;  // unsigned long size + 1 byte we add + 2 just to be safe
+
+    AssertableBuffer buffer;
+    setUpArduinoFake();
+    RS485Bus<bufferSize> bus(buffer, readEnablePin, writeEnablePin);
+    PacketMatchingBytes packetInfo;
+    Mock<PacketMatchingBytes> spy = spyMatchingBytes(packetInfo);
+    Packetizer packetizer(bus, packetInfo);
+
+    // AWFUL HACK ALERT - related: https://github.com/eranpeer/FakeIt/issues/274
+    // Essentially, we can't verify captured arguments. So we have an array to verify if we've called in using the correct parameters.
+    // We also don't want to re-implement what PacketMatchingBytes does so we create a new instance that we defer to, since our main instance is being spied on.
+    bool wasCalledAssert[bufferSize] = { false };
+    int endIndexAssert[bufferSize] = { 0 };
+    PacketMatchingBytes basePacketInfo;
+    When(Method(spy, isPacket)).AlwaysDo([&](const RS485BusBase& bus, const int& startIndex, int& endIndex)->PacketStatus {
+      wasCalledAssert[startIndex] = true;
+      PacketStatus result = basePacketInfo.isPacket(bus, startIndex, endIndex);
+
+      endIndexAssert[startIndex] = endIndex;
+      return result;
+    });
+
+    // Even values of i is "not enough bytes", odd is "no" and we want both. (2 * i + 1) will always be odd. We want ulSize+1 bytes of that.
+    buffer << 0; // Start with an even byte so we don't automatically shift all the "no" answers away.
+    for(int i = 0; i < ulSize; i++) {
+      buffer << 2 * i + 1;
+    }
+    
+    // Ensure the bus hasn't fetched a single byte from the serial bus yet, meaning the packetizer calls fetch
+    TEST_ASSERT_EQUAL_INT(0, bus.available());
+    TEST_ASSERT_EQUAL_INT(0, packetizer.packetLength());
+
+    TEST_ASSERT_FALSE(packetizer.hasPacket());
+    TEST_ASSERT_EQUAL_INT(0, packetizer.packetLength());
+    TEST_ASSERT_EQUAL_INT(ulSize + 1, bus.available());
+
+    // -- We want to verify that "isPacket" got called on everything
+
+    std::string message;
+    for(int i = 0; i < bus.bufferSize(); i++) {
+      if(i <= ulSize) {
+        message = "Was not called for start index " + std::to_string(i);
+        TEST_ASSERT_TRUE_MESSAGE(wasCalledAssert[i], message.c_str());
+
+        message = "Bad end index for start index " + std::to_string(i);
+        TEST_ASSERT_EQUAL_INT_MESSAGE(ulSize, endIndexAssert[i], message.c_str());
+      } else {
+        message = "Was called for start index " + std::to_string(i);
+        TEST_ASSERT_FALSE_MESSAGE(wasCalledAssert[i], message.c_str());
+
+        message = "Bad end index for start index " + std::to_string(i);
+        TEST_ASSERT_EQUAL_INT_MESSAGE(0, endIndexAssert[i], message.c_str());
+      }
+    }
+
+    // -- Now we want to call hasPacket again and verify that the NO past ulSize gets called on again.
+
+    // Queue a byte that will get checked regardless. Otherwise hasPacket will exit without rechecking anything
+    buffer << 255;
+
+    // Reset everthing
+    memset(wasCalledAssert, false, sizeof(bool) * bufferSize);
+    memset(endIndexAssert, 0, sizeof(int) * bufferSize);
+
+    // Call our hasPacket method
+    TEST_ASSERT_FALSE(packetizer.hasPacket());
+    TEST_ASSERT_EQUAL_INT(0, packetizer.packetLength());
+    TEST_ASSERT_EQUAL_INT(ulSize + 2, bus.available());
+
+    // Verify that only bytes at (0), (ulSize), and (ulSize + 1) were checked.
+    // (ulSize + 1) wasn't ever checked, (0) is our "not enough bytes", and (ulSize) is past where we're able to check it.
+    for(int i = 0; i < bus.bufferSize(); i++) {
+      if(i == 0 || i == ulSize || i == (ulSize + 1)) {
+        message = "Was not called for start index " + std::to_string(i);
+        TEST_ASSERT_TRUE_MESSAGE(wasCalledAssert[i], message.c_str());
+
+        message = "Bad end index for start index " + std::to_string(i);
+        TEST_ASSERT_EQUAL_INT_MESSAGE(ulSize + 1, endIndexAssert[i], message.c_str());
+      } else {
+        message = "Was called for start index " + std::to_string(i);
+        TEST_ASSERT_FALSE_MESSAGE(wasCalledAssert[i], message.c_str());
+
+        message = "Bad end index for start index " + std::to_string(i);
+        TEST_ASSERT_EQUAL_INT_MESSAGE(0, endIndexAssert[i], message.c_str());
+      }
+    }
+  }
+
   void run_tests() {
     RUN_TEST(test_by_default_no_packets_are_available);
     RUN_TEST(test_can_get_simple_packet);
     RUN_TEST(test_only_no_bytes_get_skipped);
     RUN_TEST(test_not_enough_bytes_get_skipped_if_buffer_is_full);
     RUN_TEST(test_no_bytes_do_not_get_tested_again);
+    RUN_TEST(test_no_bytes_past_our_limit_get_rechecked);
   }
 }
 

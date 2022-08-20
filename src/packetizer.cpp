@@ -11,7 +11,13 @@ void Packetizer::eatOneByte() {
 }
 
 bool Packetizer::hasPacket() {
+  if(packetSize > 0) {
+    return true;  // We have a packet already, no need to do any searching
+  }
+
   bus->fetch();
+
+
 
   if(lastBusAvailable == bus->available()) {
     return false; // No new bytes are available, so no new packet is available
@@ -20,7 +26,11 @@ bool Packetizer::hasPacket() {
   lastBusAvailable = bus->available();
 
   for(startIndex = 0; startIndex < lastBusAvailable; startIndex++) {
-    bool alreadyChecked = (recheckBitmap & (1 << startIndex)) > 0;
+    bool alreadyChecked = false;
+    
+    if(startIndex < (sizeof(recheckBitmap) * 8)) {
+      alreadyChecked = (recheckBitmap & (1L << startIndex)) > 0;
+    }
     if(alreadyChecked) {
       continue;
     }
@@ -29,7 +39,9 @@ bool Packetizer::hasPacket() {
     PacketStatus status = packetInfo->isPacket(*bus, startIndex, endIndex);
 
     if(status == PacketStatus::NO) {
-      recheckBitmap |= (1 << startIndex);
+      if(startIndex < (sizeof(recheckBitmap) * 8)) {
+        recheckBitmap |= (1L << startIndex);
+      }
       // Remove any "no" byte at the start
       if(startIndex == 0) {
         eatOneByte();
