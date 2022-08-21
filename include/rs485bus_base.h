@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Arduino.h"
+#include "util.h"
 #include "read_write_buffer.h"
 
 enum class WriteStatus {
@@ -25,19 +26,19 @@ public:
 
   virtual int bufferSize() const = 0;
 
-  WriteStatus write(const unsigned char& value);
+  VIRTUAL_FOR_UNIT_TEST WriteStatus write(const unsigned char& value);
 
   int available() const;
   bool isBufferFull() const;
-  int fetch();  // Returns how many bytes were fetched
+  VIRTUAL_FOR_UNIT_TEST int fetch();  // Returns how many bytes were fetched
   int read();  // Reads one byte and returns it. Returns -1 if no byte is read
 
   const int operator[](const unsigned int& index) const;
 
-  void setReadBackDelayMs(int milliseconds);
-  void setReadBackRetries(int retryCount);
-  void setPreFetchDelayMs(int milliseconds);
-  void setPreFetchRetries(int retryCount);
+  void setReadBackDelayMs(unsigned int milliseconds);
+  void setReadBackRetries(unsigned int retryCount);
+  void setPreFetchDelayMs(unsigned int milliseconds);
+  void setPreFetchRetries(unsigned int retryCount);
 
 protected:
   virtual void setByte(const unsigned int& bufferIndex, const unsigned char value) = 0;
@@ -55,8 +56,8 @@ private:
   int tail = 0;
   bool full = false;
 
-  int readBackRetryMilliseconds = 0;
-  int readBackRetryCount = 0;
-  int preFetchDelayMilliseconds = 0;
-  int preFetchRetryCount = 0;
+  unsigned int readBackRetryMilliseconds = 0;
+  unsigned int readBackRetryCount = 0;
+  unsigned int preFetchDelayMilliseconds = 0;
+  unsigned int preFetchRetryCount = 0;
 };

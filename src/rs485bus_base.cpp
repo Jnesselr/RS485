@@ -129,17 +129,17 @@ const int RS485BusBase::operator[](const unsigned int& index) const {
   return getByte(bufferPosition);
 }
 
-void RS485BusBase::setReadBackDelayMs(int milliseconds) {
-  readBackRetryMilliseconds = milliseconds > 0 ? milliseconds : 0;
+void RS485BusBase::setReadBackDelayMs(unsigned int milliseconds) {
+  this->readBackRetryMilliseconds = milliseconds;
 }
 
-void RS485BusBase::setReadBackRetries(int retryCount) {
-  readBackRetryCount =  retryCount > 0 ? retryCount : 0;
+void RS485BusBase::setReadBackRetries(unsigned int retryCount) {
+  this->readBackRetryCount = retryCount;
 }
 
-void RS485BusBase::setPreFetchDelayMs(int milliseconds) {
-  preFetchDelayMilliseconds = milliseconds > 0 ? milliseconds : 0;
+void RS485BusBase::setPreFetchDelayMs(unsigned int milliseconds) {
+  this->preFetchDelayMilliseconds = milliseconds;
 }
-void RS485BusBase::setPreFetchRetries(int retryCount) {
-  preFetchRetryCount =  retryCount > 0 ? retryCount : 0;
+void RS485BusBase::setPreFetchRetries(unsigned int retryCount) {
+  this->preFetchRetryCount = retryCount;
 }

@@ -1,4 +1,5 @@
 #include "packetizer.h"
+#include <unity.h>
 
 Packetizer::Packetizer(RS485BusBase& bus, const PacketInfo& packetInfo):
 bus(&bus),  packetInfo(&packetInfo) {}
@@ -99,4 +100,73 @@ void Packetizer::clearPacket() {
 
 void Packetizer::setMaxReadTimeout(unsigned long maxReadTimeout) {
   this->maxReadTimeout = maxReadTimeout;
+}
+
+PacketWriteStatus Packetizer::writePacket(const unsigned char* buffer, int bufferSize) {
+  std::string message;
+
+  unsigned long currentMillis = millis();
+  message = "Current read time: " + std::to_string(currentMillis);
+  TEST_MESSAGE(message.c_str());
+  if(currentMillis - lastByteReadTime < busQuietTime) {
+    unsigned long delayTime = busQuietTime - (currentMillis - lastByteReadTime);
+
+    while(true) {
+      message = "Delaying: " + std::to_string(delayTime);
+      TEST_MESSAGE(message.c_str());
+      delay(delayTime);
+      int bytesFetched = fetchFromBus();
+      message = "Bytes fetched: " + std::to_string(bytesFetched);
+      TEST_MESSAGE(message.c_str());
+      if(bytesFetched == 0) {
+        break;
+      }
+
+      delayTime = busQuietTime;
+    }
+  }
+
+  for(int i = 0; i < bufferSize; i++) {
+    WriteStatus status = bus->write(buffer[i]);
+    message = std::to_string(i) + ": " + std::to_string((int)status);
+    TEST_MESSAGE(message.c_str());
+    if(status == WriteStatus::UNEXPECTED_EXTRA_BYTES) {
+      if(i > 0) {
+        return PacketWriteStatus::FAILED_INTERRUPTED;
+      }
+    } else if(status == WriteStatus::READ_BUFFER_FULL) {
+      return PacketWriteStatus::FAILED_BUFFER_FULL;
+    } else if(status == WriteStatus::NO_WRITE_BUFFER_FULL) {
+      return PacketWriteStatus::FAILED_BUFFER_FULL;
+    } else if(status == WriteStatus::NO_READ_TIMEOUT) {
+      return PacketWriteStatus::FAILED_INTERRUPTED;
+    } else if(status == WriteStatus::FAILED_READ_BACK) {
+      return PacketWriteStatus::FAILED_INTERRUPTED;
+    } else if(status == WriteStatus::NO_WRITE_NEW_BYTES) {
+      return PacketWriteStatus::FAILED_INTERRUPTED;
+    }
+  }
+
+  return PacketWriteStatus::OK;
+}
+
+void Packetizer::setMaxWriteTimeout(unsigned long maxWriteTimeout) {
+  this->maxWriteTimeout = maxWriteTimeout;
+}
+
+void Packetizer::setBusQuietTime(unsigned int busQuietTime) {
+  this->busQuietTime = busQuietTime;
+}
+
+int Packetizer::fetchFromBus() {
+  std::string message;
+  int result = bus->fetch();
+  message = "Bytes fetched from bus: " + std::to_string(result);
+  TEST_MESSAGE(message.c_str());
+  if(result > 0) {
+    lastByteReadTime = millis();
+    message = "Last byte read time: " + std::to_string(lastByteReadTime);
+    TEST_MESSAGE(message.c_str());
+  }
+  return result;
 }
