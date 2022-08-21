@@ -140,7 +140,7 @@ namespace PacketizerReadTest {
     bool wasCalledAssert[bufferSize] = { false };
     int endIndexAssert[bufferSize] = { 0 };
     PacketMatchingBytes basePacketInfo;
-    When(Method(spy, isPacket)).AlwaysDo([&](const RS485BusBase& bus, const int& startIndex, int& endIndex)->PacketStatus {
+    When(Method(spy, isPacket)).AlwaysDo([&](const RS485BusBase& bus, const int startIndex, int& endIndex)->PacketStatus {
       wasCalledAssert[startIndex] = true;
       PacketStatus result = basePacketInfo.isPacket(bus, startIndex, endIndex);
 
