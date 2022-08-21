@@ -6,7 +6,8 @@
 enum class PacketWriteStatus {
   OK,
   FAILED_INTERRUPTED,
-  FAILED_BUFFER_FULL
+  FAILED_BUFFER_FULL,
+  FAILED_TIMEOUT
 };
 
 class Packetizer {

@@ -5,6 +5,7 @@ Packetizer::Packetizer(RS485BusBase& bus, const PacketInfo& packetInfo):
 bus(&bus),  packetInfo(&packetInfo) {}
 
 void Packetizer::eatOneByte() {
+  TEST_MESSAGE("We shouldn't be hungry!");
   bus->read();
   lastBusAvailable--; // read removes one byte from the bus
   startIndex--; // Reset us so we'll be reading the first byte again next time
@@ -12,20 +13,29 @@ void Packetizer::eatOneByte() {
 }
 
 bool Packetizer::hasPacket() {
+  std::string message;
   if(packetSize > 0) {
     return true;  // We have a packet already, no need to do any searching
   }
 
-  unsigned long startMillis = millis();
+  TEST_MESSAGE("Start!");
+
+  unsigned long startTimeMs = millis();
+  message = "Start time ms: " + std::to_string(startTimeMs);
+  TEST_MESSAGE(message.c_str());
 
   while(true) {
-    int bytesFetched = bus->fetch();
+    int bytesFetched = fetchFromBus();
+    message = "Bytes fetched: " + std::to_string(bytesFetched);
+    TEST_MESSAGE(message.c_str());
 
     if(lastBusAvailable == bus->available()) {
       return false; // No new bytes are available, so no new packet is available
     }
 
     lastBusAvailable = bus->available();
+
+    TEST_MESSAGE("Available called");
 
     for(startIndex = 0; startIndex < lastBusAvailable; startIndex++) {
       bool alreadyChecked = false;
@@ -72,7 +82,10 @@ bool Packetizer::hasPacket() {
     }
 
     unsigned long currentMillis = millis();
-    if(currentMillis - startMillis >= maxReadTimeout) {
+    message = "Read current Millis: " + std::to_string(currentMillis);
+    TEST_MESSAGE(message.c_str());
+    
+    if(currentMillis - startTimeMs >= maxReadTimeout) {
       return false;  // We timed out trying to read a valid packet
     }
   }
@@ -105,11 +118,11 @@ void Packetizer::setMaxReadTimeout(unsigned long maxReadTimeout) {
 PacketWriteStatus Packetizer::writePacket(const unsigned char* buffer, int bufferSize) {
   std::string message;
 
-  unsigned long currentMillis = millis();
-  message = "Current read time: " + std::to_string(currentMillis);
+  unsigned long startTimeMs = millis();
+  message = "Current read time: " + std::to_string(startTimeMs);
   TEST_MESSAGE(message.c_str());
-  if(currentMillis - lastByteReadTime < busQuietTime) {
-    unsigned long delayTime = busQuietTime - (currentMillis - lastByteReadTime);
+  if(startTimeMs - lastByteReadTime < busQuietTime) {
+    unsigned long delayTime = busQuietTime - (startTimeMs - lastByteReadTime);
 
     while(true) {
       message = "Delaying: " + std::to_string(delayTime);
@@ -120,6 +133,10 @@ PacketWriteStatus Packetizer::writePacket(const unsigned char* buffer, int buffe
       TEST_MESSAGE(message.c_str());
       if(bytesFetched == 0) {
         break;
+      }
+
+      if(lastByteReadTime >= startTimeMs + maxWriteTimeout) {
+        return PacketWriteStatus::FAILED_TIMEOUT;
       }
 
       delayTime = busQuietTime;
@@ -159,6 +176,7 @@ void Packetizer::setBusQuietTime(unsigned int busQuietTime) {
 }
 
 int Packetizer::fetchFromBus() {
+  TEST_MESSAGE("Fetch from bus called");
   std::string message;
   int result = bus->fetch();
   message = "Bytes fetched from bus: " + std::to_string(result);
