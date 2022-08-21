@@ -383,9 +383,9 @@ namespace PacketizerReadTest {
     02 03 -- | "neb" stays, buffer isn't full. 03 gets a no.
     02 03 04 | fetch is called. lastBusAvailable (2) != bus available (3), so continue with lastBusAvailable as 3. 0x2 and 0x4 are checked
     03 04 -- | buffer is full, so "neb" is removed. lastBusAvailable becomes 2
-    03 04 06 | fetch is called. lastBusAvailable (2) != bus available (3), so continue with lastBusAvailable as 3.
-    04 06 -- | "no" gets shifted, lastBusAvailable becomes 2
-    04 06 06 | fetch is called. lastBusAvailable (2) != bus available (3), so continue with lastBusAvailable as 3.
+    04 -- -- | "no" gets shifted, lastBusAvailable becomes 1.
+    04 -- -- | "neb" stays, buffer isn't full.
+    04 06 06 | fetch is called. lastBusAvailable (1) != bus available (3), so continue with lastBusAvailable as 3.
     06 06 -- | "neb" 04 is removed since the buffer is full
     06 06 -- | yes is found! 0x06 <-> 0x06 is our packet
     */
@@ -423,7 +423,13 @@ namespace PacketizerReadTest {
     packetizer.setMaxReadTimeout(200);
 
     buffer << 0x01 << 0x02 << 0x03 << 0x04 << 0x06 << 0x06;
-    When(Method(ArduinoFake(), millis)).Return(0, 100, 200);
+    When(Method(ArduinoFake(), millis)).Return(
+      0,    // Start time ms
+      10,   // fetch from bus time
+      100,  // Timeout check
+      110,  // fetch from bus time
+      200   // Timeout check
+      );
 
     // Ensure the bus hasn't fetched a single byte from the serial bus yet, meaning the packetizer calls fetch
     TEST_ASSERT_EQUAL_INT(0, bus.available());
