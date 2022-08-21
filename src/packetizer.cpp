@@ -5,7 +5,6 @@ Packetizer::Packetizer(RS485BusBase& bus, const PacketInfo& packetInfo):
 bus(&bus),  packetInfo(&packetInfo) {}
 
 void Packetizer::eatOneByte() {
-  TEST_MESSAGE("We shouldn't be hungry!");
   bus->read();
   lastBusAvailable--; // read removes one byte from the bus
   startIndex--; // Reset us so we'll be reading the first byte again next time
