@@ -28,12 +28,12 @@ public:
 
   VIRTUAL_FOR_UNIT_TEST WriteStatus write(const unsigned char& value);
 
-  int available() const;
+  VIRTUAL_FOR_UNIT_TEST int available() const;
   bool isBufferFull() const;
   VIRTUAL_FOR_UNIT_TEST int fetch();  // Returns how many bytes were fetched
   int read();  // Reads one byte and returns it. Returns -1 if no byte is read
 
-  const int operator[](const unsigned int& index) const;
+  VIRTUAL_FOR_UNIT_TEST const int operator[](const unsigned int& index) const;
 
   void setReadBackDelayMs(unsigned int milliseconds);
   void setReadBackRetries(unsigned int retryCount);
