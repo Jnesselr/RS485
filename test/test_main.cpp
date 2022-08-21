@@ -6,8 +6,9 @@
 
 #include "test_assertable_buffer.h"
 #include "test_rs485bus.h"
-#include "test_packetizer_read.h"
 #include "test_matching_bytes.h"
+#include "test_packetizer_read.h"
+#include "test_packetizer_write.h"
 
 #define RUN_TEST_GROUP(TEST) \
     if (!std::getenv("TEST_GROUP") || (strcmp(#TEST, std::getenv("TEST_GROUP")) == 0)) { \
@@ -27,6 +28,7 @@ int main(int argc, char **argv)
     RUN_TEST_GROUP(RS485BusTest);
     RUN_TEST_GROUP(PacketMatchingBytesTest); // Tests a class used in tests for future tests
     RUN_TEST_GROUP(PacketizerReadTest);
+    RUN_TEST_GROUP(PacketizerWriteTest);
 
     UNITY_END();
 
