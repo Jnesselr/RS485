@@ -1,38 +1,42 @@
-#include <Arduino.h>
-#include <cstdlib>
-#include <unity.h>
-
-#ifdef UNIT_TEST
+#include <gtest/gtest.h>
 
 #include "test_assertable_buffer.h"
-#include "test_rs485bus.h"
-#include "test_matching_bytes.h"
-#include "test_packetizer_read.h"
-#include "test_packetizer_write.h"
 
-#define RUN_TEST_GROUP(TEST) \
-    if (!std::getenv("TEST_GROUP") || (strcmp(#TEST, std::getenv("TEST_GROUP")) == 0)) { \
-        TEST::run_tests(); \
-    }
+#if defined(ARDUINO)
+#include <Arduino.h>
 
-void setUp(void)
+void setup()
 {
-    ArduinoFakeReset();
+    // should be the same value as for the `test_speed` option in "platformio.ini"
+    // default value is test_speed=115200
+    Serial.begin(115200);
+
+    ::testing::InitGoogleTest();
+    // if you plan to use GMock, replace the line above with
+    // ::testing::InitGoogleMock();
 }
 
+void loop()
+{
+  // Run tests
+  if (RUN_ALL_TESTS())
+  ;
+
+  // sleep for 1 sec
+  delay(1000);
+}
+
+#else
 int main(int argc, char **argv)
 {
-    UNITY_BEGIN();
+    ::testing::InitGoogleTest(&argc, argv);
+    // if you plan to use GMock, replace the line above with
+    // ::testing::InitGoogleMock(&argc, argv);
 
-    RUN_TEST_GROUP(AssertableBufferTest); // Tests a class used in tests for future tests
-    RUN_TEST_GROUP(RS485BusTest);
-    RUN_TEST_GROUP(PacketMatchingBytesTest); // Tests a class used in tests for future tests
-    RUN_TEST_GROUP(PacketizerReadTest);
-    RUN_TEST_GROUP(PacketizerWriteTest);
+    if (RUN_ALL_TESTS())
+    ;
 
-    UNITY_END();
-
+    // Always return zero-code and allow PlatformIO to parse results
     return 0;
 }
-
 #endif

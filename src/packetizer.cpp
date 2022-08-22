@@ -1,5 +1,4 @@
 #include "packetizer.h"
-#include <unity.h>
 
 Packetizer::Packetizer(RS485BusBase& bus, const PacketInfo& packetInfo):
 bus(&bus),  packetInfo(&packetInfo) {}
@@ -12,29 +11,20 @@ void Packetizer::eatOneByte() {
 }
 
 bool Packetizer::hasPacket() {
-  std::string message;
   if(packetSize > 0) {
     return true;  // We have a packet already, no need to do any searching
   }
 
-  TEST_MESSAGE("Start!");
-
   unsigned long startTimeMs = millis();
-  message = "Start time ms: " + std::to_string(startTimeMs);
-  TEST_MESSAGE(message.c_str());
 
   while(true) {
     int bytesFetched = fetchFromBus();
-    message = "Bytes fetched: " + std::to_string(bytesFetched);
-    TEST_MESSAGE(message.c_str());
 
     if(lastBusAvailable == bus->available()) {
       return false; // No new bytes are available, so no new packet is available
     }
 
     lastBusAvailable = bus->available();
-
-    TEST_MESSAGE("Available called");
 
     for(startIndex = 0; startIndex < lastBusAvailable; startIndex++) {
       bool alreadyChecked = false;
@@ -81,8 +71,6 @@ bool Packetizer::hasPacket() {
     }
 
     unsigned long currentMillis = millis();
-    message = "Read current Millis: " + std::to_string(currentMillis);
-    TEST_MESSAGE(message.c_str());
     
     if(currentMillis - startTimeMs >= maxReadTimeout) {
       return false;  // We timed out trying to read a valid packet
@@ -118,18 +106,12 @@ PacketWriteStatus Packetizer::writePacket(const unsigned char* buffer, int buffe
   std::string message;
 
   unsigned long startTimeMs = millis();
-  message = "Current read time: " + std::to_string(startTimeMs);
-  TEST_MESSAGE(message.c_str());
   if(startTimeMs - lastByteReadTime < busQuietTime) {
     unsigned long delayTime = busQuietTime - (startTimeMs - lastByteReadTime);
 
     while(true) {
-      message = "Delaying: " + std::to_string(delayTime);
-      TEST_MESSAGE(message.c_str());
       delay(delayTime);
       int bytesFetched = fetchFromBus();
-      message = "Bytes fetched: " + std::to_string(bytesFetched);
-      TEST_MESSAGE(message.c_str());
       if(bytesFetched == 0) {
         break;
       }
@@ -144,8 +126,6 @@ PacketWriteStatus Packetizer::writePacket(const unsigned char* buffer, int buffe
 
   for(int i = 0; i < bufferSize; i++) {
     WriteStatus status = bus->write(buffer[i]);
-    message = std::to_string(i) + ": " + std::to_string((int)status);
-    TEST_MESSAGE(message.c_str());
     if(status == WriteStatus::UNEXPECTED_EXTRA_BYTES) {
       if(i > 0) {
         return PacketWriteStatus::FAILED_INTERRUPTED;
@@ -175,15 +155,9 @@ void Packetizer::setBusQuietTime(unsigned int busQuietTime) {
 }
 
 int Packetizer::fetchFromBus() {
-  TEST_MESSAGE("Fetch from bus called");
-  std::string message;
   int result = bus->fetch();
-  message = "Bytes fetched from bus: " + std::to_string(result);
-  TEST_MESSAGE(message.c_str());
   if(result > 0) {
     lastByteReadTime = millis();
-    message = "Last byte read time: " + std::to_string(lastByteReadTime);
-    TEST_MESSAGE(message.c_str());
   }
   return result;
 }
