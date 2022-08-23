@@ -1,87 +1,66 @@
-#ifdef UNIT_TEST
-#include <unity.h>
+#pragma once
 
-#include "assertable_buffer.h"
+#include "../assertable_buffer.h"
+#include "../matching_bytes.h"
+#include "../fixtures.h"
+
 #include "rs485bus.hpp"
-#include "matching_bytes.h"
 #include <ArduinoFake.h>
 
-namespace PacketMatchingBytesTest {
-  const uint8_t readEnablePin = 13;
-  const uint8_t writeEnablePin = 14;
+class PacketMatchingBytesTest : public PrepBus {
+public:
+  PacketMatchingBytesTest(): PrepBus(),
+    bus(buffer, readEnablePin, writeEnablePin) {}
 
-  void setUpArduinoFake() {
-    When(Method(ArduinoFake(), pinMode)).AlwaysReturn();
-    When(Method(ArduinoFake(), digitalWrite)).AlwaysReturn();
-  }
+  void SetUp() {
+    ArduinoFake().ClearInvocationHistory();
+  };
 
-  void test_single_byte_odd() {
-    AssertableBuffer buffer;
+  AssertableBuffer buffer;
+  RS485Bus<8> bus;
+  PacketMatchingBytes packetInfo;
+};
 
-    setUpArduinoFake();
-    RS485Bus<8> bus(buffer, readEnablePin, writeEnablePin);
-    buffer << 0x01;
-    bus.fetch();
+TEST_F(PacketMatchingBytesTest, single_byte_odd) {
+  buffer << 0x01;
+  bus.fetch();
 
-    PacketMatchingBytes packetInfo;
-
-    int endIndex = 0;
-    TEST_ASSERT_EQUAL_INT(PacketStatus::NO, packetInfo.isPacket(bus, 0, endIndex));
-  }
-
-  void test_single_byte_even() {
-    AssertableBuffer buffer;
-
-    setUpArduinoFake();
-    RS485Bus<8> bus(buffer, readEnablePin, writeEnablePin);
-    buffer << 0x02;
-    bus.fetch();
-
-    PacketMatchingBytes packetInfo;
-
-    int endIndex = 0;
-    TEST_ASSERT_EQUAL_INT(PacketStatus::NOT_ENOUGH_BYTES, packetInfo.isPacket(bus, 0, endIndex));
-  }
-  
-  void test_various_packets() {
-    AssertableBuffer buffer;
-
-    setUpArduinoFake();
-    RS485Bus<8> bus(buffer, readEnablePin, writeEnablePin);
-    buffer << 0x01 << 0x02 << 0x03 << 0x01 << 0xff << 0xfe << 0x02;
-    bus.fetch();
-
-    PacketMatchingBytes packetInfo;
-
-    int endIndex = 6;
-    TEST_ASSERT_EQUAL_INT(PacketStatus::YES, packetInfo.isPacket(bus, 0, endIndex));
-    TEST_ASSERT_EQUAL_INT(3, endIndex);
-
-    endIndex = 6;
-    TEST_ASSERT_EQUAL_INT(PacketStatus::YES, packetInfo.isPacket(bus, 1, endIndex));
-    TEST_ASSERT_EQUAL_INT(6, endIndex);
-
-    TEST_ASSERT_EQUAL_INT(PacketStatus::NO, packetInfo.isPacket(bus, 2, endIndex));
-    TEST_ASSERT_EQUAL_INT(6, endIndex);
-
-    TEST_ASSERT_EQUAL_INT(PacketStatus::NO, packetInfo.isPacket(bus, 3, endIndex));
-    TEST_ASSERT_EQUAL_INT(6, endIndex);
-
-    TEST_ASSERT_EQUAL_INT(PacketStatus::NO, packetInfo.isPacket(bus, 4, endIndex));
-    TEST_ASSERT_EQUAL_INT(6, endIndex);
-
-    TEST_ASSERT_EQUAL_INT(PacketStatus::NOT_ENOUGH_BYTES, packetInfo.isPacket(bus, 5, endIndex));
-    TEST_ASSERT_EQUAL_INT(6, endIndex);
-
-    TEST_ASSERT_EQUAL_INT(PacketStatus::NOT_ENOUGH_BYTES, packetInfo.isPacket(bus, 6, endIndex));
-    TEST_ASSERT_EQUAL_INT(6, endIndex);
-  }
-
-  void run_tests() {
-    RUN_TEST(test_single_byte_odd);
-    RUN_TEST(test_single_byte_even);
-    RUN_TEST(test_various_packets);
-  }
+  int endIndex = 0;
+  EXPECT_EQ(packetInfo.isPacket(bus, 0, endIndex), PacketStatus::NO);
 }
 
-#endif
+TEST_F(PacketMatchingBytesTest, single_byte_even) {
+  buffer << 0x02;
+  bus.fetch();
+
+  int endIndex = 0;
+  EXPECT_EQ(packetInfo.isPacket(bus, 0, endIndex), PacketStatus::NOT_ENOUGH_BYTES);
+}
+
+TEST_F(PacketMatchingBytesTest, various_packets) {
+  buffer << 0x01 << 0x02 << 0x03 << 0x01 << 0xff << 0xfe << 0x02;
+  bus.fetch();
+
+  int endIndex = 6;
+  EXPECT_EQ(packetInfo.isPacket(bus, 0, endIndex), PacketStatus::YES);
+  EXPECT_EQ(endIndex, 3);
+
+  endIndex = 6;
+  EXPECT_EQ(packetInfo.isPacket(bus, 1, endIndex), PacketStatus::YES);
+  EXPECT_EQ(endIndex, 6);
+
+  EXPECT_EQ(packetInfo.isPacket(bus, 2, endIndex), PacketStatus::NO);
+  EXPECT_EQ(endIndex, 6);
+
+  EXPECT_EQ(packetInfo.isPacket(bus, 3, endIndex), PacketStatus::NO);
+  EXPECT_EQ(endIndex, 6);
+
+  EXPECT_EQ(packetInfo.isPacket(bus, 4, endIndex), PacketStatus::NO);
+  EXPECT_EQ(endIndex, 6);
+
+  EXPECT_EQ(packetInfo.isPacket(bus, 5, endIndex), PacketStatus::NOT_ENOUGH_BYTES);
+  EXPECT_EQ(endIndex, 6);
+
+  EXPECT_EQ(packetInfo.isPacket(bus, 6, endIndex), PacketStatus::NOT_ENOUGH_BYTES);
+  EXPECT_EQ(endIndex, 6);
+}

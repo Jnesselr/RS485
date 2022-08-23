@@ -1,22 +1,11 @@
 #pragma once
 
-#include "assertable_buffer.h"
+#include "../assertable_buffer.h"
+#include "../fixtures.h"
 #include "rs485bus.hpp"
 #include <ArduinoFake.h>
 
 using namespace fakeit;
-
-// We need our arduino fake up and running before we get to the RS485Bus initialization in the RS485BusTest constructor
-class PrepBus : public ::testing::Test {
-public:
-  PrepBus() {
-    ArduinoFakeReset();
-
-    When(Method(ArduinoFake(), pinMode)).AlwaysReturn();
-    When(Method(ArduinoFake(), digitalWrite)).AlwaysReturn();
-    When(Method(ArduinoFake(), delay)).AlwaysReturn();
-  }
-};
 
 class RS485BusTest : public PrepBus {
 public:
@@ -28,8 +17,6 @@ public:
     ArduinoFake().ClearInvocationHistory();
   };
 
-  const uint8_t readEnablePin = 13;
-  const uint8_t writeEnablePin = 14;
   AssertableBuffer buffer;
   Mock<AssertableBuffer> spy = buffer.spy();
 
