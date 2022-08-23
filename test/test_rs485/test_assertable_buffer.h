@@ -1,7 +1,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
-#include "assertable_buffer.h"
+#include "../assertable_buffer.h"
 
 class AssertableBufferTest : public ::testing::Test {
 protected:

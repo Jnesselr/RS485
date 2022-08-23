@@ -71,6 +71,7 @@
     "iostream": "cpp",
     "map": "cpp",
     "set": "cpp",
-    "filesystem": "cpp"
+    "filesystem": "cpp",
+    "*.keepme": "cpp"
   }
 }
