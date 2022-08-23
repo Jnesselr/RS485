@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "test_assertable_buffer.h"
+#include "test_rs485bus.h"
 
 #if defined(ARDUINO)
 #include <Arduino.h>

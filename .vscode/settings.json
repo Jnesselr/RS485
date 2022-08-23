@@ -70,6 +70,7 @@
     "iomanip": "cpp",
     "iostream": "cpp",
     "map": "cpp",
-    "set": "cpp"
+    "set": "cpp",
+    "filesystem": "cpp"
   }
 }
