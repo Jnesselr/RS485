@@ -4,6 +4,7 @@
 #include "test_rs485bus.h"
 #include "test_matching_bytes.h"
 #include "test_packetizer_read.h"
+#include "test_packetizer_write.h"
 
 #if defined(ARDUINO)
 #include <Arduino.h>
