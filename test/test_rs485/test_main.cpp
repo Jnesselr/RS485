@@ -7,6 +7,7 @@
 #include "test_packetizer_write.h"
 #include "filters/test_filter_by_value.h"
 #include "test_packetizer_filter.h"
+#include "filters/test_combo_filter.h"
 
 #if defined(ARDUINO)
 #include <Arduino.h>

@@ -212,3 +212,5 @@ TEST_F(PacketizerFilterTest, post_filter_is_ignored_if_filter_is_disabled) {
   EXPECT_EQ(0, packetizer.packetLength());
   EXPECT_EQ(0, bus.available());
 }
+
+// TODO Verify that preFilter is not called unless we have enough bytes

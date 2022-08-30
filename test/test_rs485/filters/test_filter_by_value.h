@@ -8,8 +8,6 @@
 #include "rs485/rs485bus.hpp"
 #include "rs485/filters/filter_by_value.h"
 
-#define FOR_BYTES(name) for(unsigned char name = 0; name < 256; name++)
-
 
 class FilterByValueTest : public PrepBus {
 protected:
