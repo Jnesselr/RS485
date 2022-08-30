@@ -1,4 +1,4 @@
-#include "filters/filter_by_value.h"
+#include "rs485/filters/filter_by_value.h"
 
 FilterByValue::FilterByValue(unsigned int lookAhead):
   lookAhead(lookAhead) {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "packet_info.h"
+#include "rs485/packet_info.h"
 
 class PacketMatchingBytes: public PacketInfo {
 public:
