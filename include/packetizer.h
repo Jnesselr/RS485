@@ -2,6 +2,8 @@
 
 #include "rs485bus_base.h"
 #include "packet_info.h"
+#include "inttypes.h"
+#include "filter.h"
 
 enum class PacketWriteStatus {
   OK,
@@ -23,17 +25,25 @@ public:
   PacketWriteStatus writePacket(const unsigned char* buffer, int bufferSize);
   void setBusQuietTime(unsigned int busQuietTime);
   void setMaxWriteTimeout(unsigned long maxWriteTimeout);
+
+  void setFilter(const Filter& filter);
+  void removeFilter();
 private:
+  bool hasPacketInnerLoop();
+
   int fetchFromBus();
   inline void eatOneByte();
+  inline void rejectByte(size_t location);
 
   RS485BusBase* bus;
   const PacketInfo* packetInfo;
-  int packetSize = 0;
+  const Filter* filter = nullptr;
+  int packetSize = 0;  // TODO size_t?
 
+  bool shouldRecheck = true;
   int lastBusAvailable = 0;
   int startIndex = 0;
-  unsigned long recheckBitmap = 0;
+  uint64_t recheckBitmap = 0;
 
   unsigned long maxReadTimeout = -1;  // Read forever until you find something
   unsigned long maxWriteTimeout = -1;  // Write forever until you successfully write it (except in cases of buffer full)
