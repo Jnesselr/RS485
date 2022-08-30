@@ -5,6 +5,7 @@
 #include "test_matching_bytes.h"
 #include "test_packetizer_read.h"
 #include "test_packetizer_write.h"
+#include "test_filter_by_value.h"
 
 #if defined(ARDUINO)
 #include <Arduino.h>
