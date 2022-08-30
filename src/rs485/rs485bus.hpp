@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rs485bus_base.h"
+#include "rs485/rs485bus_base.h"
 
 template<int BufferSize>
 class RS485Bus: public RS485BusBase {

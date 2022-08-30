@@ -1,14 +1,14 @@
 #pragma once
 
-#include <gtest/gtest.h>
-
 #include "../assertable_buffer.h"
 #include "../matching_bytes.h"
 #include "../fixtures.h"
 
-#include "rs485bus.hpp"
-#include "packetizer.h"
+#include <gtest/gtest.h>
 #include "fakeit/fakeit.hpp"
+
+#include "rs485/rs485bus.hpp"
+#include "rs485/packetizer.h"
 
 using namespace fakeit;
 

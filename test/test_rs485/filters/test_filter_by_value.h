@@ -1,12 +1,12 @@
 #pragma once
 
+#include "../../assertable_buffer.h"
+#include "../../fixtures.h"
+
 #include <gtest/gtest.h>
 
-#include "../assertable_buffer.h"
-#include "../fixtures.h"
-
-#include "filters/filter_by_value.h"
-#include "rs485bus.hpp"
+#include "rs485/rs485bus.hpp"
+#include "rs485/filters/filter_by_value.h"
 
 #define FOR_BYTES(name) for(unsigned char name = 0; name < 256; name++)
 

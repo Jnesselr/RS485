@@ -1,4 +1,4 @@
-#include "rs485bus_base.h"
+#include "rs485/rs485bus_base.h"
 
 RS485BusBase::RS485BusBase(ReadWriteBuffer& buffer, int readEnablePin, int writeEnablePin) :
   buffer(buffer),

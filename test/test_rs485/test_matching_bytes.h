@@ -4,8 +4,9 @@
 #include "../matching_bytes.h"
 #include "../fixtures.h"
 
-#include "rs485bus.hpp"
 #include <ArduinoFake.h>
+
+#include "rs485/rs485bus.hpp"
 
 class PacketMatchingBytesTest : public PrepBus {
 public:

@@ -1,4 +1,4 @@
-#include "packetizer.h"
+#include "rs485/packetizer.h"
 
 Packetizer::Packetizer(RS485BusBase& bus, const PacketInfo& packetInfo):
 bus(&bus),  packetInfo(&packetInfo) {}
