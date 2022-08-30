@@ -17,7 +17,7 @@ struct ValueFilter {
 private:
   void set(uint8_t value);
   void clear(uint8_t value);
-  bool isSet(uint8_t value);
+  bool isSet(uint8_t value) const;
 
   uint8_t values[32];
 
@@ -29,11 +29,11 @@ public:
   FilterByValue(): FilterByValue(0) {}
   FilterByValue(unsigned int lookAhead);
 
-  virtual unsigned int lookAheadBytes();
+  virtual unsigned int lookAheadBytes() const;
 
-  virtual bool preFilter(const RS485BusBase& bus, const int startIndex);
+  virtual bool preFilter(const RS485BusBase& bus, const int startIndex) const;
 
-  virtual bool postFilter(const RS485BusBase& bus, const int startIndex, const int endIndex);
+  virtual bool postFilter(const RS485BusBase& bus, const int startIndex, const int endIndex) const;
 
   ValueFilter preValues;
   ValueFilter postValues;

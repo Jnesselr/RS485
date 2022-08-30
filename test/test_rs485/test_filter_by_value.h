@@ -43,6 +43,18 @@ TEST_F(FilterByValueTest, by_default_look_ahead_is_0) {
   EXPECT_EQ(filterAhead5.lookAheadBytes(), 5);
 }
 
+TEST_F(FilterByValueTest, by_default_the_filter_is_enabled) {
+  EXPECT_TRUE(filter.isEnabled());
+}
+
+TEST_F(FilterByValueTest, can_disable_and_enable_the_filter) {
+  filter.setEnabled(false);
+  EXPECT_FALSE(filter.isEnabled());
+
+  filter.setEnabled();
+  EXPECT_TRUE(filter.isEnabled());
+}
+
 TEST_F(FilterByValueTest, by_default_pre_value_allows_nothing) {
   forBytes([this](uint8_t i) {
     uint8_t byteOffset = i >> 3;

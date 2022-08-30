@@ -30,17 +30,17 @@
 class Filter {
 public:
   // How many bytes to look ahead? 0 means "only look at this byte". Applies to pre-filter only.
-  virtual unsigned int lookAheadBytes() = 0;
+  virtual unsigned int lookAheadBytes() const = 0;
 
   // Packetizer will make sure this is always called where endIndex is at least "lookAheadBytes" away. Don't check past that byte.
   // Return true to call isPacket on this data. Return false and the packetizer will treat this startIndex as if isPacket returned NO.
-  virtual bool preFilter(const RS485BusBase& bus, const int startIndex) = 0;
+  virtual bool preFilter(const RS485BusBase& bus, const int startIndex) const = 0;
 
   // Packetizer will call this after PacketInfo's isPacket returns true.
   // Return true to return this packet to the user.
-  virtual bool postFilter(const RS485BusBase& bus, const int startIndex, const int endIndex) = 0;
+  virtual bool postFilter(const RS485BusBase& bus, const int startIndex, const int endIndex) const = 0;
 
-  virtual bool isEnabled() { return enabled; }
+  virtual bool isEnabled() const { return enabled; }
   virtual void setEnabled(bool enabled = true) { this->enabled = enabled; };
 
 protected:

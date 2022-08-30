@@ -1,5 +1,7 @@
 #pragma once
 
+#include <gtest/gtest.h>
+
 #include "../assertable_buffer.h"
 #include "../matching_bytes.h"
 #include "../fixtures.h"

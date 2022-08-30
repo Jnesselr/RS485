@@ -3,11 +3,30 @@
 Packetizer::Packetizer(RS485BusBase& bus, const PacketInfo& packetInfo):
 bus(&bus),  packetInfo(&packetInfo) {}
 
+void Packetizer::setFilter(const Filter& filter) {
+  this->filter = &filter;
+}
+
+void Packetizer::removeFilter() {
+  this->filter = nullptr;
+}
+
 void Packetizer::eatOneByte() {
   bus->read();
   lastBusAvailable--; // read removes one byte from the bus
   startIndex--; // Reset us so we'll be reading the first byte again next time
   recheckBitmap >>= 1;
+}
+
+void Packetizer::rejectByte(size_t location) {
+  // Remove any "no" byte at the start
+  if(startIndex == 0) {
+    eatOneByte();
+  } else {
+    if(location < (sizeof(recheckBitmap) * 8)) {
+      recheckBitmap |= (1L << location);
+    }
+  }
 }
 
 bool Packetizer::hasPacket() {
@@ -26,54 +45,81 @@ bool Packetizer::hasPacket() {
 
     lastBusAvailable = bus->available();
 
-    for(startIndex = 0; startIndex < lastBusAvailable; startIndex++) {
-      bool alreadyChecked = false;
-      
-      if(startIndex < (sizeof(recheckBitmap) * 8)) {
-        alreadyChecked = (recheckBitmap & (1L << startIndex)) > 0;
-      }
-      if(alreadyChecked) {
-        // It's very possible to have already checked a byte
-        if(startIndex == 0) {
-          eatOneByte();
-        }
-        continue;
-      }
-
-      int endIndex = lastBusAvailable - 1;
-      PacketStatus status = packetInfo->isPacket(*bus, startIndex, endIndex);
-
-      if(status == PacketStatus::NO) {
-        if(startIndex < (sizeof(recheckBitmap) * 8)) {
-          recheckBitmap |= (1L << startIndex);
-        }
-        // Remove any "no" byte at the start
-        if(startIndex == 0) {
-          eatOneByte();
-        }
-      }
-      else if(status == PacketStatus::YES) {
-        packetSize = endIndex - startIndex + 1;
-
-        // Clear out all bytes before startIndex
-        while(startIndex > 0) {
-          eatOneByte();
-        }
-
-        return true;
-      }
-      else if(status == PacketStatus::NOT_ENOUGH_BYTES) {
-        // Remove any "not enough bytes" byte at the start, only if the buffer is full
-        if(startIndex == 0 && bus->isBufferFull()) {
-          eatOneByte();
-        }
-      }
+    bool packetFound = hasPacketInnerLoop();
+    if(packetFound) {
+      return true;
     }
 
     unsigned long currentMillis = millis();
     
     if(currentMillis - startTimeMs >= maxReadTimeout) {
       return false;  // We timed out trying to read a valid packet
+    }
+  }
+
+  return false;
+}
+
+bool Packetizer::hasPacketInnerLoop() {
+  for(startIndex = 0; startIndex < lastBusAvailable; startIndex++) {
+    bool shouldCallIsPacket = true;
+    
+    if(startIndex < (sizeof(recheckBitmap) * 8)) {
+      if((recheckBitmap & (1L << startIndex)) > 0 ) {
+        shouldCallIsPacket = false;
+      }
+    }
+    
+    if(shouldCallIsPacket && this->filter != nullptr) {
+      if(this->filter->isEnabled()) {
+        shouldCallIsPacket = filter->preFilter(*bus, startIndex);
+      }
+    }
+
+    if(! shouldCallIsPacket) {
+      rejectByte(startIndex);
+      continue;
+    }
+
+    int endIndex = lastBusAvailable - 1;
+    PacketStatus status = packetInfo->isPacket(*bus, startIndex, endIndex);
+
+    if(status == PacketStatus::NO) {
+      rejectByte(startIndex);
+    }
+    else if(status == PacketStatus::YES) {
+      packetSize = endIndex - startIndex + 1;
+
+      // Clear out all bytes before startIndex
+      while(startIndex > 0) {
+        eatOneByte();
+      }
+
+      if(
+        this->filter != nullptr &&
+        this->filter->isEnabled() &&
+        ! this->filter->postFilter(*bus, 0, packetSize)
+      ) {
+        clearPacket();
+
+        /**
+         * Things are in a weird state right now, which would normally be fixed when a packet is found
+         * because the consumer would be calling hasPacket again. Instead, we break out of this inner
+         * loop and claiming we didn't find a packet. The downside to this is that without filtering,
+         * hasPacket may search the entire bus before checking the timeout. This will check it after
+         * every packet. It's the same behavior as the consumer filtering out their own packets, but
+         * it may cause some confusion.
+         */
+        return false;
+      }
+
+      return true;
+    }
+    else if(status == PacketStatus::NOT_ENOUGH_BYTES) {
+      // Remove any "not enough bytes" byte at the start, only if the buffer is full
+      if(startIndex == 0 && bus->isBufferFull()) {
+        eatOneByte();
+      }
     }
   }
 
