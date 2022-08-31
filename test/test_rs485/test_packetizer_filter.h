@@ -19,7 +19,8 @@ protected:
   PacketizerFilterTest() : PrepBus(),
     bus(buffer, readEnablePin, writeEnablePin),
     packetizer(bus, packetInfo),
-    filter(0)
+    filter(0),
+    filterAhead5(5)
     {
       packetizer.setFilter(filter);
     }
@@ -34,6 +35,7 @@ protected:
   PacketMatchingBytes packetInfo;
   Packetizer packetizer;
   FilterByValue filter;
+  FilterByValue filterAhead5;
 };
 
 TEST_F(PacketizerFilterTest, pre_filter_is_called_before_is_packet) {
@@ -213,4 +215,90 @@ TEST_F(PacketizerFilterTest, post_filter_is_ignored_if_filter_is_disabled) {
   EXPECT_EQ(0, bus.available());
 }
 
-// TODO Verify that preFilter is not called unless we have enough bytes
+TEST_F(PacketizerFilterTest, look_ahead_bytes_are_respected_when_deciding_to_call_filter) {
+  packetizer.setFilter(filterAhead5);
+  filterAhead5.preValues.allowAll();
+  filterAhead5.postValues.allowAll();
+
+  // Even though this has a packet, we won't verify it because we won't call our filter.
+  buffer << 0x01 << 0x02 << 0x03 << 0x04 << 0x01;
+
+  ASSERT_FALSE(packetizer.hasPacket());
+
+  buffer << 0x06 << 0x06;
+
+  ASSERT_TRUE(packetizer.hasPacket());
+  EXPECT_EQ(5, packetizer.packetLength());
+  EXPECT_EQ(7, bus.available());
+  EXPECT_EQ(0x01, bus[0]);
+  EXPECT_EQ(0x02, bus[1]);
+  EXPECT_EQ(0x03, bus[2]);
+  EXPECT_EQ(0x04, bus[3]);
+  EXPECT_EQ(0x01, bus[4]);
+  EXPECT_EQ(0x06, bus[5]);
+  EXPECT_EQ(0x06, bus[6]);
+  EXPECT_EQ(-1, bus[7]);
+
+  packetizer.clearPacket();
+  // Has packet MUST be called to verify setFilter resets the last bus available variable
+  ASSERT_FALSE(packetizer.hasPacket());
+
+  // If the filter is left in place, we want it to reject our packet
+  filterAhead5.preValues.rejectAll();
+  filterAhead5.preValues.rejectAll();
+
+  // Does changing the filter reset look ahead bytes?
+  packetizer.setFilter(filter);
+  filter.preValues.allowAll();
+  filter.postValues.allowAll();
+
+  ASSERT_TRUE(packetizer.hasPacket());
+  EXPECT_EQ(2, packetizer.packetLength());
+  EXPECT_EQ(2, bus.available());
+  EXPECT_EQ(0x06, bus[0]);
+  EXPECT_EQ(0x06, bus[1]);
+  EXPECT_EQ(-1, bus[2]);
+}
+
+TEST_F(PacketizerFilterTest, look_ahead_bytes_are_removed_when_filter_is_removed) {
+  packetizer.setFilter(filterAhead5);
+  filterAhead5.preValues.allowAll();
+  filterAhead5.postValues.allowAll();
+
+  // Even though this has a packet, we won't verify it because we won't call our filter.
+  buffer << 0x01 << 0x02 << 0x03 << 0x04 << 0x01;
+
+  ASSERT_FALSE(packetizer.hasPacket());
+
+  buffer << 0x06 << 0x06;
+
+  ASSERT_TRUE(packetizer.hasPacket());
+  EXPECT_EQ(5, packetizer.packetLength());
+  EXPECT_EQ(7, bus.available());
+  EXPECT_EQ(0x01, bus[0]);
+  EXPECT_EQ(0x02, bus[1]);
+  EXPECT_EQ(0x03, bus[2]);
+  EXPECT_EQ(0x04, bus[3]);
+  EXPECT_EQ(0x01, bus[4]);
+  EXPECT_EQ(0x06, bus[5]);
+  EXPECT_EQ(0x06, bus[6]);
+  EXPECT_EQ(-1, bus[7]);
+
+  packetizer.clearPacket();
+  // Has packet MUST be called to verify removeFilter resets the last bus available variable
+  ASSERT_FALSE(packetizer.hasPacket());
+
+  // If the filter is left in place, we want it to reject our packet
+  filterAhead5.preValues.rejectAll();
+  filterAhead5.preValues.rejectAll();
+
+  // Does removing the filter reset look ahead bytes?
+  packetizer.removeFilter();
+
+  ASSERT_TRUE(packetizer.hasPacket());
+  EXPECT_EQ(2, packetizer.packetLength());
+  EXPECT_EQ(2, bus.available());
+  EXPECT_EQ(0x06, bus[0]);
+  EXPECT_EQ(0x06, bus[1]);
+  EXPECT_EQ(-1, bus[2]);
+}

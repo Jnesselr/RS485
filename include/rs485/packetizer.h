@@ -37,8 +37,10 @@ private:
 
   RS485BusBase* bus;
   const PacketInfo* packetInfo;
-  const Filter* filter = nullptr;
   int packetSize = 0;  // TODO size_t?
+
+  const Filter* filter = nullptr;
+  size_t filterLookAhead = 0;
 
   bool shouldRecheck = true;
   int lastBusAvailable = 0;
