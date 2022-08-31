@@ -5,10 +5,14 @@ bus(&bus),  packetInfo(&packetInfo) {}
 
 void Packetizer::setFilter(const Filter& filter) {
   this->filter = &filter;
+  this->filterLookAhead = filter.lookAheadBytes();
+  this->lastBusAvailable = 0;
 }
 
 void Packetizer::removeFilter() {
   this->filter = nullptr;
+  this->filterLookAhead = 0;
+  this->lastBusAvailable = 0;
 }
 
 void Packetizer::eatOneByte() {
@@ -71,7 +75,13 @@ bool Packetizer::hasPacketInnerLoop() {
     }
     
     if(shouldCallIsPacket && this->filter != nullptr) {
-      if(this->filter->isEnabled()) {
+      if(
+        this->filter->isEnabled()
+      ) {
+        if(startIndex + this->filterLookAhead >= lastBusAvailable) {
+          return false; // We don't have enough bytes to call this filter
+        }
+
         shouldCallIsPacket = filter->preFilter(*bus, startIndex);
       }
     }
