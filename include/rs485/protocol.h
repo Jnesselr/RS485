@@ -2,7 +2,7 @@
 
 #include "rs485bus_base.h"
 
-enum class PacketStatus {
+enum class PacketStatus: uint8_t {
   YES,
   NO,
   NOT_ENOUGH_BYTES

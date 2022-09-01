@@ -1,4 +1,4 @@
-#include "assertable_buffer.h"
+#include "assertable_buffer.hpp"
 
 AssertableBuffer::AssertableBuffer() {
 
@@ -18,14 +18,15 @@ int16_t AssertableBuffer::read() {
   return result;
 }
 
-void AssertableBuffer::readable(uint8_t readable) {
+AssertableBuffer& AssertableBuffer::readable(uint8_t readable) {
   buffer[tail] = readable;
   tail = (tail + 1) % BUFFER_SIZE;
+
+  return *this;
 }
 
 AssertableBuffer& AssertableBuffer::operator<<(uint8_t readable) {
-  this->readable(readable);
-  return *this;
+  return this->readable(readable);
 }
 
 int16_t AssertableBuffer::operator[](size_t index) {
