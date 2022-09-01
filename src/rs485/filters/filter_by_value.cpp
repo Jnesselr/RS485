@@ -1,18 +1,18 @@
 #include "rs485/filters/filter_by_value.h"
 
-FilterByValue::FilterByValue(unsigned int lookAhead):
+FilterByValue::FilterByValue(size_t lookAhead):
   lookAhead(lookAhead) {
 }
 
-unsigned int FilterByValue::lookAheadBytes() const {
+size_t FilterByValue::lookAheadBytes() const {
   return lookAhead;
 }
 
-bool FilterByValue::preFilter(const RS485BusBase& bus, const int startIndex) const {
+bool FilterByValue::preFilter(const RS485BusBase& bus, size_t startIndex) const {
   return preValues.isSet(bus[startIndex + lookAhead]);
 }
 
-bool FilterByValue::postFilter(const RS485BusBase& bus, const int startIndex, const int endIndex) const {
+bool FilterByValue::postFilter(const RS485BusBase& bus, size_t startIndex, size_t endIndex) const {
   if(endIndex < startIndex + lookAhead) {
     return false;
   }

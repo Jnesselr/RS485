@@ -22,42 +22,42 @@ Notes on WriteStatus:
 
 class RS485BusBase {
 public:
-  explicit RS485BusBase(ReadWriteBuffer& buffer, int readEnablePin, int writeEnablePin);
+  explicit RS485BusBase(ReadWriteBuffer& buffer, uint8_t readEnablePin, uint8_t writeEnablePin);
 
-  virtual int bufferSize() const = 0;
+  virtual size_t bufferSize() const = 0;
 
-  VIRTUAL_FOR_UNIT_TEST WriteStatus write(const unsigned char& value);
+  VIRTUAL_FOR_UNIT_TEST WriteStatus write(uint8_t value);
 
-  VIRTUAL_FOR_UNIT_TEST int available() const;
+  VIRTUAL_FOR_UNIT_TEST size_t available() const;
   bool isBufferFull() const;
-  VIRTUAL_FOR_UNIT_TEST int fetch();  // Returns how many bytes were fetched
-  int read();  // Reads one byte and returns it. Returns -1 if no byte is read
+  VIRTUAL_FOR_UNIT_TEST size_t fetch();  // Returns how many bytes were fetched
+  int16_t read();  // Reads one byte and returns it. Returns -1 if no byte is read
 
-  VIRTUAL_FOR_UNIT_TEST const int operator[](const unsigned int& index) const;
+  VIRTUAL_FOR_UNIT_TEST int16_t operator[](size_t index) const;
 
-  void setReadBackDelayMs(unsigned int milliseconds);
-  void setReadBackRetries(unsigned int retryCount);
-  void setPreFetchDelayMs(unsigned int milliseconds);
-  void setPreFetchRetries(unsigned int retryCount);
+  void setReadBackDelayMs(unsigned long milliseconds);
+  void setReadBackRetries(size_t retryCount);
+  void setPreFetchDelayMs(unsigned long milliseconds);
+  void setPreFetchRetries(size_t retryCount);
 
 protected:
-  virtual void setByte(const unsigned int& bufferIndex, const unsigned char value) = 0;
-  virtual const unsigned char getByte(const unsigned int& bufferIndex) const = 0;
-  int readBufferSize;
+  virtual void setByte(size_t bufferIndex, uint8_t value) = 0;
+  virtual uint8_t getByte(size_t bufferIndex) const = 0;
+  size_t readBufferSize;
 
 private:
-  void putByteInBuffer(const unsigned char& value);
+  void putByteInBuffer(uint8_t value);
 
   ReadWriteBuffer& buffer;
-  int readEnablePin;
-  int writeEnablePin;
+  uint8_t readEnablePin;
+  uint8_t writeEnablePin;
 
-  int head = 0;
-  int tail = 0;
+  size_t head = 0;
+  size_t tail = 0;
   bool full = false;
 
-  unsigned int readBackRetryMilliseconds = 0;
-  unsigned int readBackRetryCount = 0;
-  unsigned int preFetchDelayMilliseconds = 0;
-  unsigned int preFetchRetryCount = 0;
+  unsigned long readBackRetryMilliseconds = 0;
+  size_t readBackRetryCount = 0;
+  unsigned long preFetchDelayMilliseconds = 0;
+  size_t preFetchRetryCount = 0;
 };

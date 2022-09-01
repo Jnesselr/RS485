@@ -17,13 +17,13 @@ public:
   explicit Packetizer(RS485BusBase& bus, const Protocol& protocol);
 
   bool hasPacket();
-  int packetLength();
+  size_t packetLength();
   void clearPacket();
 
   void setMaxReadTimeout(unsigned long maxReadTimeout);
 
-  PacketWriteStatus writePacket(const unsigned char* buffer, int bufferSize);
-  void setBusQuietTime(unsigned int busQuietTime);
+  PacketWriteStatus writePacket(const uint8_t* buffer, size_t bufferSize);
+  void setBusQuietTime(unsigned long busQuietTime);
   void setMaxWriteTimeout(unsigned long maxWriteTimeout);
 
   void setFilter(const Filter& filter);
@@ -31,25 +31,25 @@ public:
 private:
   bool hasPacketInnerLoop();
 
-  int fetchFromBus();
+  size_t fetchFromBus();
   inline void eatOneByte();
   inline void rejectByte(size_t location);
 
   RS485BusBase* bus;
   const Protocol* protocol;
-  int packetSize = 0;  // TODO size_t?
+  size_t packetSize = 0;
 
   const Filter* filter = nullptr;
   size_t filterLookAhead = 0;
 
   bool shouldRecheck = true;
-  int lastBusAvailable = 0;
-  int startIndex = 0;
+  size_t lastBusAvailable = 0;
+  size_t startIndex = 0;
   uint64_t recheckBitmap = 0;
 
-  unsigned long maxReadTimeout = -1;  // Read forever until you find something
-  unsigned long maxWriteTimeout = -1;  // Write forever until you successfully write it (except in cases of buffer full)
+  unsigned long maxReadTimeout = -1;
+  unsigned long maxWriteTimeout = -1;
 
   unsigned long lastByteReadTime = 0;  // Last time any bytes were known to be fetched
-  unsigned int busQuietTime = 0;  // How long the bus needs to go without fetching a byte
+  unsigned long busQuietTime = 0;  // How long the bus needs to go without fetching a byte
 };

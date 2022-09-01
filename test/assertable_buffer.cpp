@@ -4,31 +4,31 @@ AssertableBuffer::AssertableBuffer() {
 
 }
 
-int AssertableBuffer::available() {
+size_t AssertableBuffer::available() {
   return ((tail - head) + BUFFER_SIZE) % BUFFER_SIZE;
 }
 
-int AssertableBuffer::read() {
+int16_t AssertableBuffer::read() {
   if(head == tail) {
     return -1; // Nothing to read
   }
-  int result = buffer[head];
+  int16_t result = buffer[head];
   head = (head + 1) % BUFFER_SIZE;
 
   return result;
 }
 
-void AssertableBuffer::readable(const int& readable) {
+void AssertableBuffer::readable(uint8_t readable) {
   buffer[tail] = readable;
   tail = (tail + 1) % BUFFER_SIZE;
 }
 
-AssertableBuffer& AssertableBuffer::operator<<(const int& readable) {
+AssertableBuffer& AssertableBuffer::operator<<(uint8_t readable) {
   this->readable(readable);
   return *this;
 }
 
-int AssertableBuffer::operator[](const int& index) {
+int16_t AssertableBuffer::operator[](size_t index) {
   if (index >= available()) {
     return -1;
   }
@@ -36,14 +36,14 @@ int AssertableBuffer::operator[](const int& index) {
   return buffer[bufferPosition];
 }
 
-int AssertableBuffer::written() {
+size_t AssertableBuffer::written() {
   if(writtenHead == writtenTail) {
     return -1;
   }
   return writtenBuffer[writtenHead++];
 }
 
-void AssertableBuffer::write(const unsigned char& value) {
+void AssertableBuffer::write(uint8_t value) {
   writtenBuffer[writtenTail] = value;
   writtenTail++;
 }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "rs485/filter.h"
-#include <inttypes.h>
 
 enum class ComboFilterType {
   BOTH_FILTERS_MUST_BE_VALID,
@@ -17,11 +16,11 @@ public:
     right(&right)
   {}
 
-  virtual unsigned int lookAheadBytes() const;
+  virtual size_t lookAheadBytes() const;
 
-  virtual bool preFilter(const RS485BusBase& bus, const int startIndex) const;
+  virtual bool preFilter(const RS485BusBase& bus, const size_t startIndex) const;
 
-  virtual bool postFilter(const RS485BusBase& bus, const int startIndex, const int endIndex) const;
+  virtual bool postFilter(const RS485BusBase& bus, const size_t startIndex, const size_t endIndex) const;
 
   virtual bool isEnabled() const;
 

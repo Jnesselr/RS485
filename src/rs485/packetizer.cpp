@@ -41,7 +41,7 @@ bool Packetizer::hasPacket() {
   unsigned long startTimeMs = millis();
 
   while(true) {
-    int bytesFetched = fetchFromBus();
+    size_t bytesFetched = fetchFromBus();
 
     if(lastBusAvailable == bus->available()) {
       return false; // No new bytes are available, so no new packet is available
@@ -91,7 +91,7 @@ bool Packetizer::hasPacketInnerLoop() {
       continue;
     }
 
-    int endIndex = lastBusAvailable - 1;
+    size_t endIndex = lastBusAvailable - 1;
     PacketStatus status = protocol->isPacket(*bus, startIndex, endIndex);
 
     if(status == PacketStatus::NO) {
@@ -136,7 +136,7 @@ bool Packetizer::hasPacketInnerLoop() {
   return false;
 }
 
-int Packetizer::packetLength() {
+size_t Packetizer::packetLength() {
   return packetSize;
 }
 
@@ -158,16 +158,14 @@ void Packetizer::setMaxReadTimeout(unsigned long maxReadTimeout) {
   this->maxReadTimeout = maxReadTimeout;
 }
 
-PacketWriteStatus Packetizer::writePacket(const unsigned char* buffer, int bufferSize) {
-  std::string message;
-
+PacketWriteStatus Packetizer::writePacket(const uint8_t* buffer, size_t bufferSize) {
   unsigned long startTimeMs = millis();
   if(startTimeMs - lastByteReadTime < busQuietTime) {
     unsigned long delayTime = busQuietTime - (startTimeMs - lastByteReadTime);
 
     while(true) {
       delay(delayTime);
-      int bytesFetched = fetchFromBus();
+      size_t bytesFetched = fetchFromBus();
       if(bytesFetched == 0) {
         break;
       }
@@ -180,7 +178,7 @@ PacketWriteStatus Packetizer::writePacket(const unsigned char* buffer, int buffe
     }
   }
 
-  for(int i = 0; i < bufferSize; i++) {
+  for(size_t i = 0; i < bufferSize; i++) {
     WriteStatus status = bus->write(buffer[i]);
     if(status == WriteStatus::UNEXPECTED_EXTRA_BYTES) {
       if(i > 0) {
@@ -206,12 +204,12 @@ void Packetizer::setMaxWriteTimeout(unsigned long maxWriteTimeout) {
   this->maxWriteTimeout = maxWriteTimeout;
 }
 
-void Packetizer::setBusQuietTime(unsigned int busQuietTime) {
+void Packetizer::setBusQuietTime(unsigned long busQuietTime) {
   this->busQuietTime = busQuietTime;
 }
 
-int Packetizer::fetchFromBus() {
-  int result = bus->fetch();
+size_t Packetizer::fetchFromBus() {
+  int16_t result = bus->fetch();
   if(result > 0) {
     lastByteReadTime = millis();
   }
