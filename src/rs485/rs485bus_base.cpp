@@ -1,6 +1,6 @@
 #include "rs485/rs485bus_base.h"
 
-RS485BusBase::RS485BusBase(ReadWriteBuffer& buffer, int readEnablePin, int writeEnablePin) :
+RS485BusBase::RS485BusBase(ReadWriteBuffer& buffer, uint8_t readEnablePin, uint8_t writeEnablePin) :
   buffer(buffer),
   readEnablePin(readEnablePin),
   writeEnablePin(writeEnablePin) {
@@ -10,11 +10,11 @@ RS485BusBase::RS485BusBase(ReadWriteBuffer& buffer, int readEnablePin, int write
     digitalWrite(writeEnablePin, LOW);
 }
 
-WriteStatus RS485BusBase::write(const unsigned char& writeValue) {
+WriteStatus RS485BusBase::write(uint8_t writeValue) {
   bool anyBytesFetched = fetch() > 0;
   bool newBytesFetched = anyBytesFetched;
   while(newBytesFetched) {
-    for(int i=0; i <= preFetchRetryCount; i++) {
+    for(size_t i=0; i <= preFetchRetryCount; i++) {
       delay(preFetchDelayMilliseconds);
 
       newBytesFetched = fetch() > 0;
@@ -77,7 +77,7 @@ WriteStatus RS485BusBase::write(const unsigned char& writeValue) {
   }
 }
 
-int RS485BusBase::available() const {
+size_t RS485BusBase::available() const {
   if(full) {
     return readBufferSize;
   }
@@ -88,8 +88,8 @@ bool RS485BusBase::isBufferFull() const {
   return full;
 }
 
-int RS485BusBase::fetch() {
-  int bytesRead = 0;
+size_t RS485BusBase::fetch() {
+  size_t bytesRead = 0;
   while(!full && buffer.available() > 0) {
     bytesRead++;
 
@@ -99,20 +99,20 @@ int RS485BusBase::fetch() {
   return bytesRead;
 }
 
-int RS485BusBase::read() {
+int16_t RS485BusBase::read() {
   fetch();
   if(available() == 0) {
     return -1;
   }
 
-  int value = getByte(head);
+  uint8_t value = getByte(head);
   head = (head + 1) % readBufferSize;
   full = false;
 
   return value;
 }
 
-void RS485BusBase::putByteInBuffer(const unsigned char& value) {
+void RS485BusBase::putByteInBuffer(uint8_t value) {
   setByte(tail, value);
   tail = (tail + 1) % readBufferSize;
 
@@ -121,7 +121,7 @@ void RS485BusBase::putByteInBuffer(const unsigned char& value) {
   }
 }
 
-const int RS485BusBase::operator[](const unsigned int& index) const {
+int16_t RS485BusBase::operator[](size_t index) const {
   if (index >= available()) {
     return -1;
   }
@@ -129,17 +129,17 @@ const int RS485BusBase::operator[](const unsigned int& index) const {
   return getByte(bufferPosition);
 }
 
-void RS485BusBase::setReadBackDelayMs(unsigned int milliseconds) {
+void RS485BusBase::setReadBackDelayMs(unsigned long milliseconds) {
   this->readBackRetryMilliseconds = milliseconds;
 }
 
-void RS485BusBase::setReadBackRetries(unsigned int retryCount) {
+void RS485BusBase::setReadBackRetries(size_t retryCount) {
   this->readBackRetryCount = retryCount;
 }
 
-void RS485BusBase::setPreFetchDelayMs(unsigned int milliseconds) {
+void RS485BusBase::setPreFetchDelayMs(unsigned long milliseconds) {
   this->preFetchDelayMilliseconds = milliseconds;
 }
-void RS485BusBase::setPreFetchRetries(unsigned int retryCount) {
+void RS485BusBase::setPreFetchRetries(size_t retryCount) {
   this->preFetchRetryCount = retryCount;
 }

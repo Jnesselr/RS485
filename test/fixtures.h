@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <inttypes.h>
 
 // We need our arduino fake up and running before we get to the RS485Bus initialization in the RS485BusTest constructor
 class PrepBus : public ::testing::Test {

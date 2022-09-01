@@ -1,8 +1,9 @@
 #include "matching_bytes.h"
+#include "inttypes.h"
 
-PacketStatus ProtocolMatchingBytes::isPacket(const RS485BusBase& bus, const int startIndex, int& endIndex) const {
-  int startingValue = bus[startIndex];
-  for(unsigned int i = startIndex + 1; i <= endIndex; i++) {
+PacketStatus ProtocolMatchingBytes::isPacket(const RS485BusBase& bus, const size_t startIndex, size_t& endIndex) const {
+  int16_t startingValue = bus[startIndex];
+  for(size_t i = startIndex + 1; i <= endIndex; i++) {
     if(bus[i] == startingValue) {
       endIndex = i;
       return PacketStatus::YES;

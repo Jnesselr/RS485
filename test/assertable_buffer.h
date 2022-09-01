@@ -1,5 +1,7 @@
 #pragma once
 
+#include <inttypes.h>
+
 #include "rs485/read_write_buffer.h"
 #include "fakeit/fakeit.hpp"
 
@@ -8,26 +10,26 @@ class AssertableBuffer: public ReadWriteBuffer {
 public:
   AssertableBuffer();
 
-  void readable(const int& readable);
-  AssertableBuffer& operator<<(const int& readable);
-  int operator[](const int& index);
-  int written();
+  void readable(uint8_t readable);
+  AssertableBuffer& operator<<(uint8_t readable);
+  int16_t operator[](size_t index);
+  size_t written();
 
   // From ReadWriteBuffer
-  virtual int available();
-  virtual int read();
-  virtual void write(const unsigned char& value);
+  virtual size_t available();
+  virtual int16_t read();
+  virtual void write(uint8_t value);
 
   fakeit::Mock<AssertableBuffer> spy();
 
 private:
-  static const int BUFFER_SIZE = 128;
+  static const size_t BUFFER_SIZE = 128;
   unsigned char buffer[AssertableBuffer::BUFFER_SIZE];
-  int head = 0;
-  int tail = 0;
+  size_t head = 0;
+  size_t tail = 0;
 
   // We're not doing anything to prevent overflow, but it's just for testing
-  unsigned char writtenBuffer[1024];
-  int writtenHead = 0;
-  int writtenTail = 0;
+  uint8_t writtenBuffer[1024];
+  size_t writtenHead = 0;
+  size_t writtenTail = 0;
 };

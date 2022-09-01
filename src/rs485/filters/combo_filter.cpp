@@ -1,12 +1,12 @@
 #include "rs485/filters/combo_filter.h"
 
-unsigned int ComboFilter::lookAheadBytes() const {
+size_t ComboFilter::lookAheadBytes() const {
   size_t leftLookAhead = left->lookAheadBytes();
   size_t rightLookAhead = right->lookAheadBytes();
   return leftLookAhead > rightLookAhead ? leftLookAhead : rightLookAhead;
 };
 
-bool ComboFilter::preFilter(const RS485BusBase& bus, const int startIndex) const {
+bool ComboFilter::preFilter(const RS485BusBase& bus, size_t startIndex) const {
   switch(preFilterType) {
     case ComboFilterType::BOTH_FILTERS_MUST_BE_VALID:
       if(! left->isEnabled()) return false;
@@ -25,7 +25,7 @@ bool ComboFilter::preFilter(const RS485BusBase& bus, const int startIndex) const
   }
 };
 
-bool ComboFilter::postFilter(const RS485BusBase& bus, const int startIndex, const int endIndex) const {
+bool ComboFilter::postFilter(const RS485BusBase& bus, size_t startIndex, size_t endIndex) const {
   switch(postFilterType) {
     case ComboFilterType::BOTH_FILTERS_MUST_BE_VALID:
       if(! left->isEnabled()) return false;

@@ -29,5 +29,5 @@ public:
    * In an ideal world, the next byte after the updated endIndex, when Protocol returns YES, would be the start of a new packet.
    * Unfortunately, given collisions and other issues, that may not be the case. Do not make any assumptions or try to "read ahead".
    */
-  virtual PacketStatus isPacket(const RS485BusBase& bus, const int startIndex, int& endIndex) const = 0;
+  virtual PacketStatus isPacket(const RS485BusBase& bus, size_t startIndex, size_t& endIndex) const = 0;
 };

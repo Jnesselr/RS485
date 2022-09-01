@@ -27,16 +27,16 @@ private:
 class FilterByValue: public Filter {
 public:
   FilterByValue(): FilterByValue(0) {}
-  FilterByValue(unsigned int lookAhead);
+  FilterByValue(size_t lookAhead);
 
-  virtual unsigned int lookAheadBytes() const;
+  virtual size_t lookAheadBytes() const;
 
-  virtual bool preFilter(const RS485BusBase& bus, const int startIndex) const;
+  virtual bool preFilter(const RS485BusBase& bus, size_t startIndex) const;
 
-  virtual bool postFilter(const RS485BusBase& bus, const int startIndex, const int endIndex) const;
+  virtual bool postFilter(const RS485BusBase& bus, size_t startIndex, size_t endIndex) const;
 
   ValueFilter preValues;
   ValueFilter postValues;
 private:
-  unsigned int lookAhead;
+  size_t lookAhead;
 };
