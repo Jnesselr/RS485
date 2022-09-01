@@ -15,7 +15,7 @@ using namespace fakeit;
 class PacketizerReadTest : public PrepBus {
 protected:
   PacketizerReadTest(): PrepBus(),
-    packetInfoSpy(packetInfo) {};
+    protocolSpy(protocol) {};
 
   void SetUp() {
     When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
@@ -24,15 +24,15 @@ protected:
   };
 
   AssertableBuffer buffer;
-  PacketMatchingBytes packetInfo;
-  Mock<PacketMatchingBytes> packetInfoSpy;
+  ProtocolMatchingBytes protocol;
+  Mock<ProtocolMatchingBytes> protocolSpy;
 };
 
 class PacketizerReadBusTest : public PacketizerReadTest {
 protected:
   PacketizerReadBusTest(): PacketizerReadTest(),
     bus(buffer, readEnablePin, writeEnablePin),
-    packetizer(bus, packetInfo) {}
+    packetizer(bus, protocol) {}
 
   RS485Bus<8> bus;
   Packetizer packetizer;
@@ -42,7 +42,7 @@ class PacketizerReadBus3Test : public PacketizerReadTest {
 protected:
   PacketizerReadBus3Test(): PacketizerReadTest(),
     bus(buffer, readEnablePin, writeEnablePin),
-    packetizer(bus, packetInfo) {}
+    packetizer(bus, protocol) {}
 
   RS485Bus<3> bus;
   Packetizer packetizer;
@@ -52,7 +52,7 @@ class PacketizerReadBusBigTest : public PacketizerReadTest {
 protected:
   PacketizerReadBusBigTest(): PacketizerReadTest(),
     bus(buffer, readEnablePin, writeEnablePin),
-    packetizer(bus, packetInfo) {}
+    packetizer(bus, protocol) {}
 
   constexpr static int ulSize = sizeof(unsigned long) * 8;  // Needs to match the date type used for recheckBitmap in Packetizer
   constexpr static int bufferSize = ulSize + 20;  // unsigned long size + 20 should be good enough for all the tests
@@ -135,13 +135,13 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
 
   // AWFUL HACK ALERT - related: https://github.com/eranpeer/FakeIt/issues/274
   // Essentially, we can't verify captured arguments. So we have an array to verify if we've called in using the correct parameters.
-  // We also don't want to re-implement what PacketMatchingBytes does so we create a new instance that we defer to, since our main instance is being spied on.
+  // We also don't want to re-implement what ProtocolMatchingBytes does so we create a new instance that we defer to, since our main instance is being spied on.
   bool wasCalledAssert[bufferSize] = { false };
   int endIndexAssert[bufferSize] = { 0 };
-  PacketMatchingBytes basePacketInfo;
-  When(Method(packetInfoSpy, isPacket)).AlwaysDo([&](const RS485BusBase& bus, const int startIndex, int& endIndex)->PacketStatus {
+  ProtocolMatchingBytes baseProtocol;
+  When(Method(protocolSpy, isPacket)).AlwaysDo([&](const RS485BusBase& bus, const int startIndex, int& endIndex)->PacketStatus {
     wasCalledAssert[startIndex] = true;
-    PacketStatus result = basePacketInfo.isPacket(bus, startIndex, endIndex);
+    PacketStatus result = baseProtocol.isPacket(bus, startIndex, endIndex);
 
     endIndexAssert[startIndex] = endIndex;
     return result;
@@ -265,13 +265,13 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_past_our_limit_get_rechecked) {
 
   // AWFUL HACK ALERT - related: https://github.com/eranpeer/FakeIt/issues/274
   // Essentially, we can't verify captured arguments. So we have an array to verify if we've called in using the correct parameters.
-  // We also don't want to re-implement what PacketMatchingBytes does so we create a new instance that we defer to, since our main instance is being spied on.
+  // We also don't want to re-implement what ProtocolMatchingBytes does so we create a new instance that we defer to, since our main instance is being spied on.
   bool wasCalledAssert[bufferSize] = { false };
   int endIndexAssert[bufferSize] = { 0 };
-  PacketMatchingBytes basePacketInfo;
-  When(Method(packetInfoSpy, isPacket)).AlwaysDo([&](const RS485BusBase& bus, const int& startIndex, int& endIndex)->PacketStatus {
+  ProtocolMatchingBytes baseProtocol;
+  When(Method(protocolSpy, isPacket)).AlwaysDo([&](const RS485BusBase& bus, const int& startIndex, int& endIndex)->PacketStatus {
     wasCalledAssert[startIndex] = true;
-    PacketStatus result = basePacketInfo.isPacket(bus, startIndex, endIndex);
+    PacketStatus result = baseProtocol.isPacket(bus, startIndex, endIndex);
 
     endIndexAssert[startIndex] = endIndex;
     return result;

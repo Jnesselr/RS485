@@ -3,7 +3,7 @@
 #include "rs485bus_base.h"
 
 /**
- * Filters can be given to the Packetizer to either filter packets before (preFilter) or after (postFilter) the isPacket of the given PacketInfo class
+ * Filters can be given to the Packetizer to either filter packets before (preFilter) or after (postFilter) the isPacket of the given Protocol class
  * runs.
  * 
  * This can be useful for a myriad of reasons. For example, say you know your packets always start with a specific byte such as a colon ':'. You can
@@ -36,7 +36,7 @@ public:
   // Return true to call isPacket on this data. Return false and the packetizer will treat this startIndex as if isPacket returned NO.
   virtual bool preFilter(const RS485BusBase& bus, const int startIndex) const = 0;
 
-  // Packetizer will call this after PacketInfo's isPacket returns true.
+  // Packetizer will call this after Protocol's isPacket returns true.
   // Return true to return this packet to the user.
   virtual bool postFilter(const RS485BusBase& bus, const int startIndex, const int endIndex) const = 0;
 

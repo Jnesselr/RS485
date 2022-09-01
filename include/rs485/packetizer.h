@@ -2,7 +2,7 @@
 
 #include "inttypes.h"
 #include "rs485/rs485bus_base.h"
-#include "rs485/packet_info.h"
+#include "rs485/protocol.h"
 #include "rs485/filter.h"
 
 enum class PacketWriteStatus {
@@ -14,7 +14,7 @@ enum class PacketWriteStatus {
 
 class Packetizer {
 public:
-  explicit Packetizer(RS485BusBase& bus, const PacketInfo& packetInfo);
+  explicit Packetizer(RS485BusBase& bus, const Protocol& protocol);
 
   bool hasPacket();
   int packetLength();
@@ -36,7 +36,7 @@ private:
   inline void rejectByte(size_t location);
 
   RS485BusBase* bus;
-  const PacketInfo* packetInfo;
+  const Protocol* protocol;
   int packetSize = 0;  // TODO size_t?
 
   const Filter* filter = nullptr;
