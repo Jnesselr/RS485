@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../assertable_buffer.h"
+#include "../../assertable_buffer.hpp"
 #include "../../fixtures.h"
 
 #include <gtest/gtest.h>

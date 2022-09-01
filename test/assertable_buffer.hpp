@@ -5,13 +5,16 @@
 #include "rs485/read_write_buffer.h"
 #include "fakeit/fakeit.hpp"
 
+#include <initializer_list>
+
 
 class AssertableBuffer: public ReadWriteBuffer {
 public:
   AssertableBuffer();
 
-  void readable(uint8_t readable);
+  AssertableBuffer& readable(uint8_t readable);
   AssertableBuffer& operator<<(uint8_t readable);
+  template<size_t bufferSize> AssertableBuffer& readable(std::array<uint8_t, bufferSize> readable);
   int16_t operator[](size_t index);
   size_t written();
 
@@ -33,3 +36,12 @@ private:
   size_t writtenHead = 0;
   size_t writtenTail = 0;
 };
+
+template<size_t bufferSize>
+AssertableBuffer& AssertableBuffer::readable(std::array<uint8_t, bufferSize> readable) {
+  for(auto it = std::begin(readable); it != std::end(readable); ++it) {
+    this->readable(*it);
+  }
+
+  return (*this);
+}
