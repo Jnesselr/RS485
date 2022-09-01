@@ -1,7 +1,7 @@
 #include "rs485/packetizer.h"
 
-Packetizer::Packetizer(RS485BusBase& bus, const PacketInfo& packetInfo):
-bus(&bus),  packetInfo(&packetInfo) {}
+Packetizer::Packetizer(RS485BusBase& bus, const Protocol& protocol):
+bus(&bus),  protocol(&protocol) {}
 
 void Packetizer::setFilter(const Filter& filter) {
   this->filter = &filter;
@@ -92,7 +92,7 @@ bool Packetizer::hasPacketInnerLoop() {
     }
 
     int endIndex = lastBusAvailable - 1;
-    PacketStatus status = packetInfo->isPacket(*bus, startIndex, endIndex);
+    PacketStatus status = protocol->isPacket(*bus, startIndex, endIndex);
 
     if(status == PacketStatus::NO) {
       rejectByte(startIndex);

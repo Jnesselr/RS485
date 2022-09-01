@@ -15,7 +15,7 @@ using namespace fakeit;
 class PacketizerWriteTest : public ::testing::Test {
 protected:
   PacketizerWriteTest() :
-    packetizer(bus, packetInfo) {}
+    packetizer(bus, protocol) {}
 
   void SetUp() {
     When(Method(ArduinoFake(), delay)).AlwaysReturn();
@@ -28,7 +28,7 @@ protected:
 
   Mock<RS485BusBase> fakeBus;
   RS485BusBase& bus = fakeBus.get();
-  PacketMatchingBytes packetInfo;  // Only needed for packetizer constructor
+  ProtocolMatchingBytes protocol;  // Only needed for packetizer constructor
   Packetizer packetizer;
 
   // Buffer is 8 bytes, but we'll only write 7

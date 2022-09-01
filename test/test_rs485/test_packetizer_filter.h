@@ -18,7 +18,7 @@ class PacketizerFilterTest : public PrepBus {
 protected:
   PacketizerFilterTest() : PrepBus(),
     bus(buffer, readEnablePin, writeEnablePin),
-    packetizer(bus, packetInfo),
+    packetizer(bus, protocol),
     filter(0),
     filterAhead5(5)
     {
@@ -32,7 +32,7 @@ protected:
 
   AssertableBuffer buffer;
   RS485Bus<8> bus;
-  PacketMatchingBytes packetInfo;
+  ProtocolMatchingBytes protocol;
   Packetizer packetizer;
   FilterByValue filter;
   FilterByValue filterAhead5;
@@ -74,7 +74,7 @@ TEST_F(PacketizerFilterTest, pre_filter_rejection_is_permanent) {
   filter.preValues.allowAll();
   filter.postValues.allowAll();
 
-  // 0x04 is kept by filter and packet info
+  // 0x04 is kept by filter and protocol
   buffer << 0x04;
   ASSERT_FALSE(packetizer.hasPacket());
   // bus: 04
