@@ -10,6 +10,8 @@ enum class PacketStatus: uint8_t {
 
 class Protocol {
 public:
+  virtual ~Protocol() {}
+
   /**
    * This method overall is pretty simple. You can inspect the bytes on the bus from startIndex up to and including endIndex.
    * - Return YES only if the packet starts at startIndex. Update endIndex to be the end of the packet.

@@ -5,14 +5,24 @@
 
 class FilterByValue;
 
-struct ValueFilter {
+/**
+ * ValueFilter is a helper class to FilterByValue. It allows you to filter bytes on both the pre and post filter
+ * using a common interface.
+ *
+ * By default, all bytes are rejected.
+ */
+class ValueFilter {
   ValueFilter();
   ValueFilter(const ValueFilter&) = delete;
-  ValueFilter& operator=(const ValueFilter&) =delete;
+  ValueFilter& operator=(const ValueFilter&) = delete;
 
+  // Allow all bytes. Useful if you only care about enabling only the pre or post filter.
   void allowAll();
+  // Reject all bytes. (default)
   void rejectAll();
+  // Allow a specific byte.
   void allow(uint8_t byte);
+  // Reject a specific byte. Useful to allow all BUT certain bytes.
   void reject(uint8_t byte);
 private:
   void set(uint8_t value);
@@ -24,6 +34,11 @@ private:
   friend class FilterByValue;
 };
 
+/**
+ * Filters packets out by value, at the offset specified in the constructor. By default the look ahead is 0,
+ * which means the first byte of any potential packet is checked against whatever values are allowed in the
+ * preValues and postValues filters. By default, all bytes are rejected.
+ */
 class FilterByValue: public Filter {
 public:
   FilterByValue(): FilterByValue(0) {}

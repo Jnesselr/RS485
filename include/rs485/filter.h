@@ -25,10 +25,12 @@
  * 
  * You can use postFilter when you need to know a set of bytes is a packet to do filtering. This is useful in protocols where you need to check one or
  * more values but you don't know where those values are until you have the entire packet available to you. It would also be useful in the example above
- * because the packet would have been read and then discarded before the consumer lost it, but tracking of packets would not have been lost.
+ * because the packet would have been read and then discarded before the consumer read it, but tracking of packets would not have been lost.
  */
 class Filter {
 public:
+  virtual ~Filter() {}
+
   // How many bytes to look ahead? 0 means "only look at this byte". Applies to pre-filter only.
   virtual size_t lookAheadBytes() const = 0;
 
