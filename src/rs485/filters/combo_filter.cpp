@@ -3,7 +3,7 @@
 size_t ComboFilter::lookAheadBytes() const {
   size_t leftLookAhead = left->lookAheadBytes();
   size_t rightLookAhead = right->lookAheadBytes();
-  return leftLookAhead > rightLookAhead ? leftLookAhead : rightLookAhead;
+  return std::max(leftLookAhead, rightLookAhead);
 };
 
 bool ComboFilter::preFilter(const RS485BusBase& bus, size_t startIndex) const {
