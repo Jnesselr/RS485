@@ -35,9 +35,9 @@ public:
 
   VIRTUAL_FOR_UNIT_TEST int16_t operator[](size_t index) const;
 
-  void setReadBackDelayMs(unsigned long milliseconds);
+  void setReadBackDelay(ArduinoTime_t delay_ms);
   void setReadBackRetries(size_t retryCount);
-  void setPreFetchDelayMs(unsigned long milliseconds);
+  void setPreFetchDelay(ArduinoTime_t delay_ms);
   void setPreFetchRetries(size_t retryCount);
 
 protected:
@@ -56,8 +56,8 @@ private:
   size_t tail = 0;
   bool full = false;
 
-  unsigned long readBackRetryMilliseconds = 0;
+  ArduinoTime_t readBackRetryMs = 0;
   size_t readBackRetryCount = 0;
-  unsigned long preFetchDelayMilliseconds = 0;
+  ArduinoTime_t preFetchDelayMs = 0;
   size_t preFetchRetryCount = 0;
 };

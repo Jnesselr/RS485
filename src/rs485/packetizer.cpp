@@ -38,7 +38,7 @@ bool Packetizer::hasPacket() {
     return true;  // We have a packet already, no need to do any searching
   }
 
-  unsigned long startTimeMs = millis();
+  ArduinoTime_t startTimeMs = millis();
 
   while(true) {
     size_t bytesFetched = fetchFromBus();
@@ -54,9 +54,9 @@ bool Packetizer::hasPacket() {
       return true;
     }
 
-    unsigned long currentMillis = millis();
+    ArduinoTime_t currentTimeMs = millis();
     
-    if(currentMillis - startTimeMs >= maxReadTimeout) {
+    if(currentTimeMs - startTimeMs >= maxReadTimeoutMs) {
       return false;  // We timed out trying to read a valid packet
     }
   }
@@ -154,14 +154,14 @@ void Packetizer::clearPacket() {
   lastBusAvailable = 0;
 }
 
-void Packetizer::setMaxReadTimeout(unsigned long maxReadTimeout) {
-  this->maxReadTimeout = maxReadTimeout;
+void Packetizer::setMaxReadTimeout(ArduinoTime_t maxReadTimeoutMs) {
+  this->maxReadTimeoutMs = maxReadTimeoutMs;
 }
 
 PacketWriteResult Packetizer::writePacket(const uint8_t* buffer, size_t bufferSize) {
-  unsigned long startTimeMs = millis();
-  if(startTimeMs - lastByteReadTime < busQuietTime) {
-    unsigned long delayTime = busQuietTime - (startTimeMs - lastByteReadTime);
+  ArduinoTime_t startTimeMs = millis();
+  if(startTimeMs - lastByteReadTimeMs < busQuietTimeMs) {
+    ArduinoTime_t delayTime = busQuietTimeMs - (startTimeMs - lastByteReadTimeMs);
 
     while(true) {
       delay(delayTime);
@@ -170,11 +170,11 @@ PacketWriteResult Packetizer::writePacket(const uint8_t* buffer, size_t bufferSi
         break;
       }
 
-      if(lastByteReadTime >= startTimeMs + maxWriteTimeout) {
+      if(lastByteReadTimeMs >= startTimeMs + maxWriteTimeoutMs) {
         return PacketWriteResult::FAILED_TIMEOUT;
       }
 
-      delayTime = busQuietTime;
+      delayTime = busQuietTimeMs;
     }
   }
 
@@ -199,18 +199,18 @@ PacketWriteResult Packetizer::writePacket(const uint8_t* buffer, size_t bufferSi
   return PacketWriteResult::OK;
 }
 
-void Packetizer::setMaxWriteTimeout(unsigned long maxWriteTimeout) {
-  this->maxWriteTimeout = maxWriteTimeout;
+void Packetizer::setMaxWriteTimeout(ArduinoTime_t maxWriteTimeoutMs) {
+  this->maxWriteTimeoutMs = maxWriteTimeoutMs;
 }
 
-void Packetizer::setBusQuietTime(unsigned long busQuietTime) {
-  this->busQuietTime = busQuietTime;
+void Packetizer::setBusQuietTime(ArduinoTime_t busQuietTimeMs) {
+  this->busQuietTimeMs = busQuietTimeMs;
 }
 
 size_t Packetizer::fetchFromBus() {
   int16_t result = bus->fetch();
   if(result > 0) {
-    lastByteReadTime = millis();
+    lastByteReadTimeMs = millis();
   }
   return result;
 }
