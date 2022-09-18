@@ -5,3 +5,5 @@
 #else
 #define VIRTUAL_FOR_UNIT_TEST
 #endif
+
+typedef unsigned long ArduinoTime_t;

@@ -129,16 +129,16 @@ int16_t RS485BusBase::operator[](size_t index) const {
   return getByte(bufferPosition);
 }
 
-void RS485BusBase::setReadBackDelayMs(unsigned long milliseconds) {
-  this->readBackRetryMilliseconds = milliseconds;
+void RS485BusBase::setReadBackDelayMs(ArduinoTime_t delay_ms) {
+  this->readBackRetryMs = delay_ms;
 }
 
 void RS485BusBase::setReadBackRetries(size_t retryCount) {
   this->readBackRetryCount = retryCount;
 }
 
-void RS485BusBase::setPreFetchDelayMs(unsigned long milliseconds) {
-  this->preFetchDelayMilliseconds = milliseconds;
+void RS485BusBase::setPreFetchDelayMs(ArduinoTime_t delay_ms) {
+  this->preFetchDelayMs = delay_ms;
 }
 void RS485BusBase::setPreFetchRetries(size_t retryCount) {
   this->preFetchRetryCount = retryCount;

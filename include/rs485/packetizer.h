@@ -36,18 +36,29 @@ class Packetizer {
 public:
   explicit Packetizer(RS485BusBase& bus, const Protocol& protocol);
 
+  // Fetch bytes from the bus and see if a packet is available based on the Protocol.
   bool hasPacket();
+  // The length of the packet available if hasPacket returns true. 0 otherwise.
   size_t packetLength();
+  // Clear the packet. If a packet is found, further calls to hasPacket will return true until this method is called.
   void clearPacket();
 
-  void setMaxReadTimeout(unsigned long maxReadTimeout);
+  /**
+   * How long to keep trying to keep trying to read a packet. If no new data is available, this value is irrelevent.
+   * If this is too high and the bus is constantly receiving new data, then hasPacket will block.
+   */
+  void setMaxReadTimeout(ArduinoTime_t maxReadTimeoutMs);
 
   PacketWriteResult writePacket(const uint8_t* buffer, size_t bufferSize);
   
-  void setBusQuietTime(unsigned long busQuietTime);
-  void setMaxWriteTimeout(unsigned long maxWriteTimeout);
+  // Before attempting to write a packet, how long should the bus not receive any new bytes
+  void setBusQuietTime(ArduinoTime_t busQuietTimeMs);
+  // The maximum amount of time we are willing to wait for the bus to go quiet
+  void setMaxWriteTimeout(ArduinoTime_t maxWriteTimeoutMs);
 
+  // Add a filter to this packetizer. See the Filter class for more details
   void setFilter(const Filter& filter);
+  // Remove a filter from this packetizer
   void removeFilter();
 private:
   bool hasPacketInnerLoop();
@@ -68,9 +79,9 @@ private:
   size_t startIndex = 0;
   uint64_t recheckBitmap = 0;
 
-  unsigned long maxReadTimeout = -1;
-  unsigned long maxWriteTimeout = -1;
+  ArduinoTime_t maxReadTimeoutMs = -1;
+  ArduinoTime_t maxWriteTimeoutMs = -1;
 
-  unsigned long lastByteReadTime = 0;  // Last time any bytes were known to be fetched
-  unsigned long busQuietTime = 0;  // How long the bus needs to go without fetching a byte
+  ArduinoTime_t lastByteReadTimeMs = 0;  // Last time any bytes were known to be fetched
+  ArduinoTime_t busQuietTimeMs = 0;  // How long the bus needs to go without fetching a byte
 };

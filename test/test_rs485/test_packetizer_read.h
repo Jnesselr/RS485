@@ -54,8 +54,8 @@ protected:
     bus(buffer, readEnablePin, writeEnablePin),
     packetizer(bus, protocol) {}
 
-  constexpr static size_t ulSize = sizeof(unsigned long) * 8;  // Needs to match the date type used for recheckBitmap in Packetizer
-  constexpr static size_t bufferSize = ulSize + 20;  // unsigned long size + 20 should be good enough for all the tests
+  constexpr static size_t u64Size = sizeof(uint64_t) * 8;  // Needs to match the date type used for recheckBitmap in Packetizer
+  constexpr static size_t bufferSize = u64Size + 20;  // uint64_t size + 20 should be good enough for all the tests
   RS485Bus<bufferSize> bus;
   Packetizer packetizer;
 };
@@ -131,7 +131,7 @@ TEST_F(PacketizerReadBus3Test, not_enough_bytes_get_skipped_if_buffer_is_full) {
  * Because it's long and hard to read, the verification sections are broken up by comments that start with "--".
  */
 TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
-  constexpr size_t ulSize = PacketizerReadBusBigTest::ulSize;
+  constexpr size_t u64Size = PacketizerReadBusBigTest::u64Size;
 
   // AWFUL HACK ALERT - related: https://github.com/eranpeer/FakeIt/issues/274
   // Essentially, we can't verify captured arguments. So we have an array to verify if we've called in using the correct parameters.
@@ -147,7 +147,7 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
     return result;
   });
 
-  for(size_t i = 0; i < ulSize; i++) {
+  for(size_t i = 0; i < u64Size; i++) {
     // Even values of i is "not enough bytes", odd is "no" and we want both. We can't just alternate or we'll get a valid packet, though. We also need it to start with "not enough bytes" so nothing gets shifted.
     buffer << i;
   }
@@ -158,14 +158,14 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
 
   EXPECT_FALSE(packetizer.hasPacket());
   EXPECT_EQ(0, packetizer.packetLength());
-  EXPECT_EQ(ulSize, bus.available());
+  EXPECT_EQ(u64Size, bus.available());
 
   // -- We want to verify that "isPacket" got called on everything
 
-  for(size_t i = 0; i < ulSize; i++) {
+  for(size_t i = 0; i < u64Size; i++) {
     EXPECT_TRUE(wasCalledAssert[i]) << "Was not called for start index " << i;
 
-    EXPECT_EQ(endIndexAssert[i], ulSize - 1) << "Bad end index for start index " << i;
+    EXPECT_EQ(endIndexAssert[i], u64Size - 1) << "Bad end index for start index " << i;
   }
 
   // -- Now we want to call hasPacket again and verify that nothing gets called because no new bytes became available
@@ -177,10 +177,10 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
   // Call our hasPacket method
   EXPECT_FALSE(packetizer.hasPacket());
   EXPECT_EQ(0, packetizer.packetLength());
-  EXPECT_EQ(ulSize, bus.available());
+  EXPECT_EQ(u64Size, bus.available());
 
   // And finally, verify
-  for(size_t i = 0; i < ulSize; i++) {
+  for(size_t i = 0; i < u64Size; i++) {
     EXPECT_FALSE(wasCalledAssert[i]) << "Was called for start index " << i << " when it should not have been";
 
     EXPECT_EQ(endIndexAssert[i], 0) << "Bad end index for start index " << i;
@@ -189,8 +189,8 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
   // -- We want to complete a packet that was "not enough bytes" before. Since the size of a long will always be even, we match with size - 2. (size - 1) is currently the last byte on the buffer.
 
   // Queue up an even number, plus a "no", plus a "not enough bytes"
-  uint8_t validPacketByte = ulSize - 2;
-  buffer << validPacketByte << (ulSize + 1) << (ulSize + 2);
+  uint8_t validPacketByte = u64Size - 2;
+  buffer << validPacketByte << (u64Size + 1) << (u64Size + 2);
 
   // Reset everthing
   memset(wasCalledAssert, false, sizeof(wasCalledAssert));
@@ -202,14 +202,14 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
   EXPECT_EQ(5, bus.available());  // Everything else got cleared out but the packet and our two extra bytes
 
   // And finally, verify
-  for(size_t i = 0; i < ulSize; i++) {
+  for(size_t i = 0; i < u64Size; i++) {
     if(i % 2 == 0) {
       EXPECT_TRUE(wasCalledAssert[i]) << "Was not called for start index " << i;
 
       if(i == validPacketByte) {
-        EXPECT_EQ(endIndexAssert[i], ulSize) << "Bad end index for start index " << i;
+        EXPECT_EQ(endIndexAssert[i], u64Size) << "Bad end index for start index " << i;
       } else {
-        EXPECT_EQ(endIndexAssert[i], ulSize + 2) << "Bad end index for start index " << i;
+        EXPECT_EQ(endIndexAssert[i], u64Size + 2) << "Bad end index for start index " << i;
       }
     } else {
       EXPECT_FALSE(wasCalledAssert[i]) << "Was called for start index " << i << " when it should not have been";
@@ -218,9 +218,9 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
     }
   }
 
-  EXPECT_FALSE(wasCalledAssert[ulSize]) << "No bytes after valid packet should have been tested";
-  EXPECT_FALSE(wasCalledAssert[ulSize+1]) << "No bytes after valid packet should have been tested";
-  EXPECT_FALSE(wasCalledAssert[ulSize+2]) << "No bytes after valid packet should have been tested";
+  EXPECT_FALSE(wasCalledAssert[u64Size]) << "No bytes after valid packet should have been tested";
+  EXPECT_FALSE(wasCalledAssert[u64Size+1]) << "No bytes after valid packet should have been tested";
+  EXPECT_FALSE(wasCalledAssert[u64Size+2]) << "No bytes after valid packet should have been tested";
 
   // -- Nothing should have changed, but we want to verify we can still see the packet with nothing having been called
 
@@ -234,15 +234,15 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
   EXPECT_EQ(5, bus.available());  // Everything else got cleared out but the packet and our two extra bytes
 
   // Verify nothing was called, meaning the packetizer cached the reuslt from last time
-  for(size_t i = 0; i < ulSize; i++) {
+  for(size_t i = 0; i < u64Size; i++) {
     EXPECT_FALSE(wasCalledAssert[i]) << "Was called for start index " << i << " when it should not have been";
 
     EXPECT_EQ(endIndexAssert[i], 0) << "Bad end index for start index " << i;
   }
 
-  // -- Clearing the packet will result in (ulSize + 1) and (ulSize + 2) being on the bus. The first is "no" so goes away. We do this step to make sure previous times where things were not re-checked will get re-checked again.
+  // -- Clearing the packet will result in (u64Size + 1) and (u64Size + 2) being on the bus. The first is "no" so goes away. We do this step to make sure previous times where things were not re-checked will get re-checked again.
   packetizer.clearPacket();
-  EXPECT_EQ(2, bus.available());  // (ulSize + 1) and (ulSize + 2)
+  EXPECT_EQ(2, bus.available());  // (u64Size + 1) and (u64Size + 2)
 
   // Reset everthing
   memset(wasCalledAssert, false, sizeof(wasCalledAssert));
@@ -255,13 +255,13 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
   EXPECT_TRUE(wasCalledAssert[0]) << "isPacket was not called again on the first byte when it should have been";
   EXPECT_EQ(0, endIndexAssert[0]);
 
-  EXPECT_EQ(1, bus.available());  // Only (ulSize + 2) is on the bus now
-  EXPECT_EQ(ulSize + 2, bus[0]);
+  EXPECT_EQ(1, bus.available());  // Only (u64Size + 2) is on the bus now
+  EXPECT_EQ(u64Size + 2, bus[0]);
   EXPECT_EQ(-1, bus[1]);
 }
 
 TEST_F(PacketizerReadBusBigTest, no_bytes_past_our_limit_get_rechecked) {
-  constexpr size_t ulSize = PacketizerReadBusBigTest::ulSize;
+  constexpr size_t u64Size = PacketizerReadBusBigTest::u64Size;
 
   // AWFUL HACK ALERT - related: https://github.com/eranpeer/FakeIt/issues/274
   // Essentially, we can't verify captured arguments. So we have an array to verify if we've called in using the correct parameters.
@@ -277,9 +277,9 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_past_our_limit_get_rechecked) {
     return result;
   });
 
-  // Even values of i is "not enough bytes", odd is "no" and we want both. (2 * i + 1) will always be odd. We want ulSize+1 bytes of that.
+  // Even values of i is "not enough bytes", odd is "no" and we want both. (2 * i + 1) will always be odd. We want u64Size+1 bytes of that.
   buffer << 0; // Start with an even byte so we don't automatically shift all the "no" answers away.
-  for(size_t i = 0; i < ulSize; i++) {
+  for(size_t i = 0; i < u64Size; i++) {
     buffer << 2 * i + 1;
   }
   
@@ -289,15 +289,15 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_past_our_limit_get_rechecked) {
 
   EXPECT_FALSE(packetizer.hasPacket());
   EXPECT_EQ(0, packetizer.packetLength());
-  EXPECT_EQ(ulSize + 1, bus.available());
+  EXPECT_EQ(u64Size + 1, bus.available());
 
   // -- We want to verify that "isPacket" got called on everything
 
   for(size_t i = 0; i < bus.bufferSize(); i++) {
-    if(i <= ulSize) {
+    if(i <= u64Size) {
       EXPECT_TRUE(wasCalledAssert[i]) << "Was not called for start index " << i;
 
-      EXPECT_EQ(endIndexAssert[i], ulSize) << "Bad end index for start index " << i;
+      EXPECT_EQ(endIndexAssert[i], u64Size) << "Bad end index for start index " << i;
     } else {
       EXPECT_FALSE(wasCalledAssert[i]) << "Was called for start index " << i;
 
@@ -305,7 +305,7 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_past_our_limit_get_rechecked) {
     }
   }
 
-  // -- Now we want to call hasPacket again and verify that the NO past ulSize gets called on again.
+  // -- Now we want to call hasPacket again and verify that the NO past u64Size gets called on again.
 
   // Queue a byte that will get checked regardless. Otherwise hasPacket will exit without rechecking anything
   buffer << 255;
@@ -317,15 +317,15 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_past_our_limit_get_rechecked) {
   // Call our hasPacket method
   EXPECT_FALSE(packetizer.hasPacket());
   EXPECT_EQ(0, packetizer.packetLength());
-  EXPECT_EQ(ulSize + 2, bus.available());
+  EXPECT_EQ(u64Size + 2, bus.available());
 
-  // Verify that only bytes at (0), (ulSize), and (ulSize + 1) were checked.
-  // (ulSize + 1) wasn't ever checked, (0) is our "not enough bytes", and (ulSize) is past where we're able to check it.
+  // Verify that only bytes at (0), (u64Size), and (u64Size + 1) were checked.
+  // (u64Size + 1) wasn't ever checked, (0) is our "not enough bytes", and (u64Size) is past where we're able to check it.
   for(size_t i = 0; i < bus.bufferSize(); i++) {
-    if(i == 0 || i == ulSize || i == (ulSize + 1)) {
+    if(i == 0 || i == u64Size || i == (u64Size + 1)) {
       EXPECT_TRUE(wasCalledAssert[i]) << "Was not called for start index " << i;
 
-      EXPECT_EQ(endIndexAssert[i], ulSize + 1) << "Bad end index for start index " << i;
+      EXPECT_EQ(endIndexAssert[i], u64Size + 1) << "Bad end index for start index " << i;
     } else {
       EXPECT_FALSE(wasCalledAssert[i]) << "Was called for start index " << i;
 
