@@ -15,7 +15,7 @@ WriteStatus RS485BusBase::write(uint8_t writeValue) {
   bool newBytesFetched = anyBytesFetched;
   while(newBytesFetched) {
     for(size_t i=0; i <= preFetchRetryCount; i++) {
-      delay(preFetchDelayMilliseconds);
+      delay(preFetchDelayMs);
 
       newBytesFetched = fetch() > 0;
       if(newBytesFetched) {
@@ -42,7 +42,7 @@ WriteStatus RS485BusBase::write(uint8_t writeValue) {
     bool bytesAvailable = (buffer.available() > 0);
     if(! bytesAvailable) {
       for(int i=0; i < readBackRetryCount; i++) {
-        delay(readBackRetryMilliseconds);
+        delay(readBackRetryMs);
 
         bytesAvailable |= (buffer.available() > 0);
         if(bytesAvailable) {
@@ -129,7 +129,7 @@ int16_t RS485BusBase::operator[](size_t index) const {
   return getByte(bufferPosition);
 }
 
-void RS485BusBase::setReadBackDelayMs(ArduinoTime_t delay_ms) {
+void RS485BusBase::setReadBackDelay(ArduinoTime_t delay_ms) {
   this->readBackRetryMs = delay_ms;
 }
 
@@ -137,7 +137,7 @@ void RS485BusBase::setReadBackRetries(size_t retryCount) {
   this->readBackRetryCount = retryCount;
 }
 
-void RS485BusBase::setPreFetchDelayMs(ArduinoTime_t delay_ms) {
+void RS485BusBase::setPreFetchDelay(ArduinoTime_t delay_ms) {
   this->preFetchDelayMs = delay_ms;
 }
 void RS485BusBase::setPreFetchRetries(size_t retryCount) {
