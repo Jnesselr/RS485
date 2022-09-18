@@ -115,7 +115,7 @@ bool Packetizer::hasPacketInnerLoop() {
         /**
          * Things are in a weird state right now, which would normally be fixed when a packet is found
          * because the consumer would be calling hasPacket again. Instead, we break out of this inner
-         * loop and claiming we didn't find a packet. The downside to this is that without filtering,
+         * loop and claim we didn't find a packet. The downside to this is that without filtering,
          * hasPacket may search the entire bus before checking the timeout. This will check it after
          * every packet. It's the same behavior as the consumer filtering out their own packets, but
          * it may cause some confusion.
@@ -158,7 +158,7 @@ void Packetizer::setMaxReadTimeout(unsigned long maxReadTimeout) {
   this->maxReadTimeout = maxReadTimeout;
 }
 
-PacketWriteStatus Packetizer::writePacket(const uint8_t* buffer, size_t bufferSize) {
+PacketWriteResult Packetizer::writePacket(const uint8_t* buffer, size_t bufferSize) {
   unsigned long startTimeMs = millis();
   if(startTimeMs - lastByteReadTime < busQuietTime) {
     unsigned long delayTime = busQuietTime - (startTimeMs - lastByteReadTime);
@@ -171,7 +171,7 @@ PacketWriteStatus Packetizer::writePacket(const uint8_t* buffer, size_t bufferSi
       }
 
       if(lastByteReadTime >= startTimeMs + maxWriteTimeout) {
-        return PacketWriteStatus::FAILED_TIMEOUT;
+        return PacketWriteResult::FAILED_TIMEOUT;
       }
 
       delayTime = busQuietTime;
@@ -180,24 +180,23 @@ PacketWriteStatus Packetizer::writePacket(const uint8_t* buffer, size_t bufferSi
 
   for(size_t i = 0; i < bufferSize; i++) {
     WriteStatus status = bus->write(buffer[i]);
-    if(status == WriteStatus::UNEXPECTED_EXTRA_BYTES) {
-      if(i > 0) {
-        return PacketWriteStatus::FAILED_INTERRUPTED;
-      }
-    } else if(status == WriteStatus::READ_BUFFER_FULL) {
-      return PacketWriteStatus::FAILED_BUFFER_FULL;
-    } else if(status == WriteStatus::NO_WRITE_BUFFER_FULL) {
-      return PacketWriteStatus::FAILED_BUFFER_FULL;
-    } else if(status == WriteStatus::NO_READ_TIMEOUT) {
-      return PacketWriteStatus::FAILED_INTERRUPTED;
-    } else if(status == WriteStatus::FAILED_READ_BACK) {
-      return PacketWriteStatus::FAILED_INTERRUPTED;
-    } else if(status == WriteStatus::NO_WRITE_NEW_BYTES) {
-      return PacketWriteStatus::FAILED_INTERRUPTED;
+    switch(status) {
+      case WriteStatus::UNEXPECTED_EXTRA_BYTES:
+        if(i > 0) {
+          return PacketWriteResult::FAILED_INTERRUPTED;
+        }
+        break;
+      case WriteStatus::READ_BUFFER_FULL:
+      case WriteStatus::NO_WRITE_BUFFER_FULL:
+        return PacketWriteResult::FAILED_BUFFER_FULL;
+      case WriteStatus::NO_READ_TIMEOUT:
+      case WriteStatus::FAILED_READ_BACK:
+      case WriteStatus::NO_WRITE_NEW_BYTES:
+        return PacketWriteResult::FAILED_INTERRUPTED;
     }
   }
 
-  return PacketWriteStatus::OK;
+  return PacketWriteResult::OK;
 }
 
 void Packetizer::setMaxWriteTimeout(unsigned long maxWriteTimeout) {
