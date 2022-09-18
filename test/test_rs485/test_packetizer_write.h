@@ -40,7 +40,7 @@ protected:
 };
 
 TEST_F(PacketizerWriteTest, write_package_with_no_interruptions) {
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
 
   PacketWriteResult status = this->writePacket();
   EXPECT_EQ(PacketWriteResult::OK, status);
@@ -59,8 +59,8 @@ TEST_F(PacketizerWriteTest, write_package_with_no_interruptions) {
 }
 
 TEST_F(PacketizerWriteTest, unexpected_extra_bytes_at_beginning_of_message) {
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
-  When(Method(fakeBus, write)(0x12)).AlwaysReturn(WriteStatus::UNEXPECTED_EXTRA_BYTES);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
+  When(Method(fakeBus, write)(0x12)).AlwaysReturn(WriteResult::UNEXPECTED_EXTRA_BYTES);
 
   PacketWriteResult status = this->writePacket();
   EXPECT_EQ(PacketWriteResult::OK, status);
@@ -79,8 +79,8 @@ TEST_F(PacketizerWriteTest, unexpected_extra_bytes_at_beginning_of_message) {
 }
 
 TEST_F(PacketizerWriteTest, unexpected_extra_bytes_in_middle_of_message) {
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
-  When(Method(fakeBus, write)(0x78)).AlwaysReturn(WriteStatus::UNEXPECTED_EXTRA_BYTES);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
+  When(Method(fakeBus, write)(0x78)).AlwaysReturn(WriteResult::UNEXPECTED_EXTRA_BYTES);
 
   PacketWriteResult status = this->writePacket();
   EXPECT_EQ(PacketWriteResult::FAILED_INTERRUPTED, status);
@@ -96,8 +96,8 @@ TEST_F(PacketizerWriteTest, unexpected_extra_bytes_in_middle_of_message) {
 }
 
 TEST_F(PacketizerWriteTest, read_buffer_full_at_beginning_of_message) {
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
-  When(Method(fakeBus, write)(0x12)).AlwaysReturn(WriteStatus::READ_BUFFER_FULL);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
+  When(Method(fakeBus, write)(0x12)).AlwaysReturn(WriteResult::READ_BUFFER_FULL);
 
   PacketWriteResult status = this->writePacket();
   EXPECT_EQ(PacketWriteResult::FAILED_BUFFER_FULL, status);
@@ -110,8 +110,8 @@ TEST_F(PacketizerWriteTest, read_buffer_full_at_beginning_of_message) {
 }
 
 TEST_F(PacketizerWriteTest, read_buffer_full_in_middle_of_message) {
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
-  When(Method(fakeBus, write)(0x78)).AlwaysReturn(WriteStatus::READ_BUFFER_FULL);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
+  When(Method(fakeBus, write)(0x78)).AlwaysReturn(WriteResult::READ_BUFFER_FULL);
 
   PacketWriteResult status = this->writePacket();
   EXPECT_EQ(PacketWriteResult::FAILED_BUFFER_FULL, status);
@@ -127,8 +127,8 @@ TEST_F(PacketizerWriteTest, read_buffer_full_in_middle_of_message) {
 }
 
 TEST_F(PacketizerWriteTest, no_write_buffer_full_at_beginning_of_message) {
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
-  When(Method(fakeBus, write)(0x12)).AlwaysReturn(WriteStatus::NO_WRITE_BUFFER_FULL);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
+  When(Method(fakeBus, write)(0x12)).AlwaysReturn(WriteResult::NO_WRITE_BUFFER_FULL);
 
   PacketWriteResult status = this->writePacket();
   EXPECT_EQ(PacketWriteResult::FAILED_BUFFER_FULL, status);
@@ -141,8 +141,8 @@ TEST_F(PacketizerWriteTest, no_write_buffer_full_at_beginning_of_message) {
 }
 
 TEST_F(PacketizerWriteTest, no_write_buffer_full_in_middle_of_message) {
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
-  When(Method(fakeBus, write)(0x78)).AlwaysReturn(WriteStatus::NO_WRITE_BUFFER_FULL);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
+  When(Method(fakeBus, write)(0x78)).AlwaysReturn(WriteResult::NO_WRITE_BUFFER_FULL);
 
   PacketWriteResult status = this->writePacket();
   EXPECT_EQ(PacketWriteResult::FAILED_BUFFER_FULL, status);
@@ -158,8 +158,8 @@ TEST_F(PacketizerWriteTest, no_write_buffer_full_in_middle_of_message) {
 }
 
 TEST_F(PacketizerWriteTest, no_read_timeout_at_beginning_of_message) {
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
-  When(Method(fakeBus, write)(0x12)).AlwaysReturn(WriteStatus::NO_READ_TIMEOUT);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
+  When(Method(fakeBus, write)(0x12)).AlwaysReturn(WriteResult::NO_READ_TIMEOUT);
 
   PacketWriteResult status = this->writePacket();
   EXPECT_EQ(PacketWriteResult::FAILED_INTERRUPTED, status);
@@ -172,8 +172,8 @@ TEST_F(PacketizerWriteTest, no_read_timeout_at_beginning_of_message) {
 }
 
 TEST_F(PacketizerWriteTest, no_read_timeout_in_middle_of_message) {
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
-  When(Method(fakeBus, write)(0x78)).AlwaysReturn(WriteStatus::NO_READ_TIMEOUT);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
+  When(Method(fakeBus, write)(0x78)).AlwaysReturn(WriteResult::NO_READ_TIMEOUT);
 
   PacketWriteResult status = this->writePacket();
   EXPECT_EQ(PacketWriteResult::FAILED_INTERRUPTED, status);
@@ -189,8 +189,8 @@ TEST_F(PacketizerWriteTest, no_read_timeout_in_middle_of_message) {
 }
 
 TEST_F(PacketizerWriteTest, failed_read_back_at_beginning_of_message) {
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
-  When(Method(fakeBus, write)(0x12)).AlwaysReturn(WriteStatus::FAILED_READ_BACK);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
+  When(Method(fakeBus, write)(0x12)).AlwaysReturn(WriteResult::FAILED_READ_BACK);
 
   PacketWriteResult status = this->writePacket();
   EXPECT_EQ(PacketWriteResult::FAILED_INTERRUPTED, status);
@@ -203,8 +203,8 @@ TEST_F(PacketizerWriteTest, failed_read_back_at_beginning_of_message) {
 }
 
 TEST_F(PacketizerWriteTest, failed_read_back_in_middle_of_message) {
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
-  When(Method(fakeBus, write)(0x78)).AlwaysReturn(WriteStatus::FAILED_READ_BACK);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
+  When(Method(fakeBus, write)(0x78)).AlwaysReturn(WriteResult::FAILED_READ_BACK);
 
   PacketWriteResult status = this->writePacket();
   EXPECT_EQ(PacketWriteResult::FAILED_INTERRUPTED, status);
@@ -220,8 +220,8 @@ TEST_F(PacketizerWriteTest, failed_read_back_in_middle_of_message) {
 }
 
 TEST_F(PacketizerWriteTest, no_write_new_bytes_at_beginning_of_message) {
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
-  When(Method(fakeBus, write)(0x12)).AlwaysReturn(WriteStatus::NO_WRITE_NEW_BYTES);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
+  When(Method(fakeBus, write)(0x12)).AlwaysReturn(WriteResult::NO_WRITE_NEW_BYTES);
 
   PacketWriteResult status = this->writePacket();
   EXPECT_EQ(PacketWriteResult::FAILED_INTERRUPTED, status);
@@ -234,8 +234,8 @@ TEST_F(PacketizerWriteTest, no_write_new_bytes_at_beginning_of_message) {
 }
 
 TEST_F(PacketizerWriteTest, no_write_new_bytes_in_middle_of_message) {
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
-  When(Method(fakeBus, write)(0x78)).AlwaysReturn(WriteStatus::NO_WRITE_NEW_BYTES);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
+  When(Method(fakeBus, write)(0x78)).AlwaysReturn(WriteResult::NO_WRITE_NEW_BYTES);
 
   PacketWriteResult status = this->writePacket();
   EXPECT_EQ(PacketWriteResult::FAILED_INTERRUPTED, status);
@@ -256,7 +256,7 @@ TEST_F(PacketizerWriteTest, write_package_delays_to_ensure_quiet_time) {
   When(Method(ArduinoFake(), millis)).AlwaysReturn(15);
   When(Method(fakeBus, fetch)).AlwaysReturn(0);
 
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
 
   PacketWriteResult status = this->writePacket();
   EXPECT_EQ(PacketWriteResult::OK, status);
@@ -287,7 +287,7 @@ TEST_F(PacketizerWriteTest, write_package_delays_to_ensure_quiet_time_in_noisy_e
   When(Method(ArduinoFake(), millis)).Return(15, 125, 230, 332);
   When(Method(fakeBus, fetch)).Return(1, 1, 1, 0);
 
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
 
   PacketWriteResult status = this->writePacket();
   EXPECT_EQ(PacketWriteResult::OK, status);
@@ -324,7 +324,7 @@ TEST_F(PacketizerWriteTest, write_package_delays_until_timeout) {
   When(Method(ArduinoFake(), millis)).Return(0, 100, 200, 300);
   When(Method(fakeBus, fetch)).AlwaysReturn(1);
 
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
 
   PacketWriteResult status = this->writePacket();
   EXPECT_EQ(PacketWriteResult::FAILED_TIMEOUT, status);
@@ -350,7 +350,7 @@ TEST_F(PacketizerWriteTest, read_affects_last_read_byte_time) {
   packetizer.setMaxWriteTimeout(0);
   packetizer.setBusQuietTime(100);
   When(Method(fakeBus, fetch)).Return(1_Time((size_t) 1), 100_Times((size_t) 0)); // Our first fetch during read has to have data to force a delay on write
-  When(Method(fakeBus, write)).AlwaysReturn(WriteStatus::OK);
+  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
 
   When(Method(ArduinoFake(), millis)).Return(
     0,    // Read start time

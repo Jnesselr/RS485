@@ -104,7 +104,7 @@ TEST_F(RS485BusTest, writing_a_byte_verifies_it_was_written) {
   buffer << 0x37;  // Next byte to be read
   When(Method(spy, available)).Return(0, 1);
 
-  EXPECT_EQ(WriteStatus::OK, bus8.write(0x37));
+  EXPECT_EQ(WriteResult::OK, bus8.write(0x37));
 
   Verify(
     Method(spy, available),
@@ -122,7 +122,7 @@ TEST_F(RS485BusTest, writing_a_byte_when_a_different_one_is_read) {
   buffer << 0x21;  // Next byte to be read
   When(Method(spy, available)).Return(0, 1, 0);
 
-  EXPECT_EQ(WriteStatus::FAILED_READ_BACK, bus8.write(0x37));
+  EXPECT_EQ(WriteResult::FAILED_READ_BACK, bus8.write(0x37));
 
   Verify(
     Method(spy, available),
@@ -141,7 +141,7 @@ TEST_F(RS485BusTest, writing_a_byte_when_a_different_one_is_read_first) {
   buffer << 0x21 << 0x05 << 0x37;  // Next byte to be read
   When(Method(spy, available)).Return(0, 3, 2, 1, 0);
 
-  EXPECT_EQ(WriteStatus::UNEXPECTED_EXTRA_BYTES, bus8.write(0x37));
+  EXPECT_EQ(WriteResult::UNEXPECTED_EXTRA_BYTES, bus8.write(0x37));
 
   Verify(
     Method(spy, available), // Returns 0
@@ -167,7 +167,7 @@ TEST_F(RS485BusTest, writing_a_byte_when_no_new_byte_is_available) {
   bus8.setReadBackRetries(0);
   bus8.setReadBackDelay(2);
 
-  EXPECT_EQ(WriteStatus::NO_READ_TIMEOUT, bus8.write(0x37));
+  EXPECT_EQ(WriteResult::NO_READ_TIMEOUT, bus8.write(0x37));
 
   Verify(
     Method(spy, available),
@@ -184,7 +184,7 @@ TEST_F(RS485BusTest, writing_a_byte_when_no_new_byte_is_available_with_delays) {
   bus8.setReadBackDelay(5);
   bus8.setReadBackRetries(3);
 
-  EXPECT_EQ(WriteStatus::NO_READ_TIMEOUT, bus8.write(0x37));
+  EXPECT_EQ(WriteResult::NO_READ_TIMEOUT, bus8.write(0x37));
 
   Verify(
     Method(spy, available),
@@ -214,7 +214,7 @@ TEST_F(RS485BusTest, writing_a_byte_that_eventually_returns_correct_value) {
   buffer << 0x21 << 0x37;
   When(Method(spy, available)).Return(0, 0, 1, 0, 1);
 
-  EXPECT_EQ(WriteStatus::UNEXPECTED_EXTRA_BYTES, bus8.write(0x37));
+  EXPECT_EQ(WriteResult::UNEXPECTED_EXTRA_BYTES, bus8.write(0x37));
 
   Verify(
     Method(spy, available), // Returns 0
@@ -249,7 +249,7 @@ TEST_F(RS485BusTest, writing_a_byte_if_that_byte_is_in_that_prefetched_buffer) {
   buffer << 0x37; // What we're about to write
   When(Method(spy, available)).Return(0, 1);
 
-  EXPECT_EQ(WriteStatus::OK, bus8.write(0x37));
+  EXPECT_EQ(WriteResult::OK, bus8.write(0x37));
 
   Verify(
     Method(spy, available),  // Returns 0
@@ -270,7 +270,7 @@ TEST_F(RS485BusTest, fetching_bytes_before_write_returns_no_write_new_bytes) {
   buffer << 0x21 << 0x34;
   When(Method(spy, available)).Return(1, 0, 0, 1, 0, 0, 0, 0);
 
-  EXPECT_EQ(WriteStatus::NO_WRITE_NEW_BYTES, bus8.write(0x37));
+  EXPECT_EQ(WriteResult::NO_WRITE_NEW_BYTES, bus8.write(0x37));
 
   Verify(
     Method(spy, available), // Returns 1, fetch #1
@@ -303,7 +303,7 @@ TEST_F(RS485BusTest, write_when_buffer_should_already_be_full) {
   buffer << 0x21 << 0x30 << 0x37;
   bus2.setReadBackRetries(0);
 
-  EXPECT_EQ(WriteStatus::NO_WRITE_BUFFER_FULL, bus2.write(0x37));
+  EXPECT_EQ(WriteResult::NO_WRITE_BUFFER_FULL, bus2.write(0x37));
 
   Verify(
     Method(spy, available),
@@ -332,7 +332,7 @@ TEST_F(RS485BusTest, write_when_buffer_becomes_full) {
 
   When(Method(spy, available)).Return(0, 3, 2, 1);
 
-  EXPECT_EQ(WriteStatus::READ_BUFFER_FULL, bus2.write(0x37));
+  EXPECT_EQ(WriteResult::READ_BUFFER_FULL, bus2.write(0x37));
 
   Verify(
     Method(spy, available), // Returns 0
@@ -360,7 +360,7 @@ TEST_F(RS485BusTest, write_when_buffer_becomes_full_but_no_more_is_available) {
 
   When(Method(spy, available)).Return(0, 2, 1, 0);
 
-  EXPECT_EQ(WriteStatus::FAILED_READ_BACK, bus2.write(0x37));
+  EXPECT_EQ(WriteResult::FAILED_READ_BACK, bus2.write(0x37));
 
   Verify(
     Method(spy, available), // Returns 0
