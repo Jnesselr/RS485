@@ -10,7 +10,7 @@ RS485BusBase::RS485BusBase(ReadWriteBuffer& buffer, uint8_t readEnablePin, uint8
     digitalWrite(writeEnablePin, LOW);
 }
 
-WriteStatus RS485BusBase::write(uint8_t writeValue) {
+WriteResult RS485BusBase::write(uint8_t writeValue) {
   bool anyBytesFetched = fetch() > 0;
   bool newBytesFetched = anyBytesFetched;
   while(newBytesFetched) {
@@ -25,9 +25,9 @@ WriteStatus RS485BusBase::write(uint8_t writeValue) {
   }
 
   if(full) {
-    return WriteStatus::NO_WRITE_BUFFER_FULL;
+    return WriteResult::NO_WRITE_BUFFER_FULL;
   } else if(anyBytesFetched) {
-    return WriteStatus::NO_WRITE_NEW_BYTES;
+    return WriteResult::NO_WRITE_NEW_BYTES;
   }
 
   digitalWrite(writeEnablePin, HIGH);
@@ -53,23 +53,23 @@ WriteStatus RS485BusBase::write(uint8_t writeValue) {
 
     if(! bytesAvailable) {
       if(readUnexpectedBytes) {
-        return WriteStatus::FAILED_READ_BACK;
+        return WriteResult::FAILED_READ_BACK;
       } else {
-        return WriteStatus::NO_READ_TIMEOUT;
+        return WriteResult::NO_READ_TIMEOUT;
       }
     }
 
     if(full) {
       // Refuse to even read the byte, because if it's not the one we expect, we can't put it in the buffer.
-      return WriteStatus::READ_BUFFER_FULL;
+      return WriteResult::READ_BUFFER_FULL;
     }
 
     int readValue = buffer.read();
     if(readValue == writeValue) {
       if(readUnexpectedBytes) {
-        return WriteStatus::UNEXPECTED_EXTRA_BYTES;
+        return WriteResult::UNEXPECTED_EXTRA_BYTES;
       }
-      return WriteStatus::OK;
+      return WriteResult::OK;
     } else {
       readUnexpectedBytes = true;
       putByteInBuffer(readValue);

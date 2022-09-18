@@ -179,19 +179,21 @@ PacketWriteResult Packetizer::writePacket(const uint8_t* buffer, size_t bufferSi
   }
 
   for(size_t i = 0; i < bufferSize; i++) {
-    WriteStatus status = bus->write(buffer[i]);
+    WriteResult status = bus->write(buffer[i]);
     switch(status) {
-      case WriteStatus::UNEXPECTED_EXTRA_BYTES:
+      case WriteResult::OK:
+        continue;
+      case WriteResult::UNEXPECTED_EXTRA_BYTES:
         if(i > 0) {
           return PacketWriteResult::FAILED_INTERRUPTED;
         }
         break;
-      case WriteStatus::READ_BUFFER_FULL:
-      case WriteStatus::NO_WRITE_BUFFER_FULL:
+      case WriteResult::READ_BUFFER_FULL:
+      case WriteResult::NO_WRITE_BUFFER_FULL:
         return PacketWriteResult::FAILED_BUFFER_FULL;
-      case WriteStatus::NO_READ_TIMEOUT:
-      case WriteStatus::FAILED_READ_BACK:
-      case WriteStatus::NO_WRITE_NEW_BYTES:
+      case WriteResult::NO_READ_TIMEOUT:
+      case WriteResult::FAILED_READ_BACK:
+      case WriteResult::NO_WRITE_NEW_BYTES:
         return PacketWriteResult::FAILED_INTERRUPTED;
     }
   }
