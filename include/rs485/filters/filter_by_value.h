@@ -12,6 +12,7 @@ class FilterByValue;
  * By default, all bytes are rejected.
  */
 class ValueFilter {
+public:
   ValueFilter();
   ValueFilter(const ValueFilter&) = delete;
   ValueFilter& operator=(const ValueFilter&) = delete;

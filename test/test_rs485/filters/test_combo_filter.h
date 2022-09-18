@@ -15,7 +15,7 @@ protected:
   ComboFilterTest(): PrepBus(),
     left(0),
     right(1),
-    combo(left, right),
+    combo(&left, &right),
     bus(buffer, readEnablePin, writeEnablePin) {}
 
   void SetUp() {

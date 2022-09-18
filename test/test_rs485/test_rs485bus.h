@@ -165,7 +165,7 @@ TEST_F(RS485BusTest, writing_a_byte_when_a_different_one_is_read_first) {
 
 TEST_F(RS485BusTest, writing_a_byte_when_no_new_byte_is_available) {
   bus8.setReadBackRetries(0);
-  bus8.setReadBackDelayMs(2);
+  bus8.setReadBackDelay(2);
 
   EXPECT_EQ(WriteStatus::NO_READ_TIMEOUT, bus8.write(0x37));
 
@@ -181,7 +181,7 @@ TEST_F(RS485BusTest, writing_a_byte_when_no_new_byte_is_available) {
 }
 
 TEST_F(RS485BusTest, writing_a_byte_when_no_new_byte_is_available_with_delays) {
-  bus8.setReadBackDelayMs(5);
+  bus8.setReadBackDelay(5);
   bus8.setReadBackRetries(3);
 
   EXPECT_EQ(WriteStatus::NO_READ_TIMEOUT, bus8.write(0x37));
@@ -208,7 +208,7 @@ TEST_F(RS485BusTest, writing_a_byte_when_no_new_byte_is_available_with_delays) {
  * a byte is read, even if that byte is incorrect.
  */
 TEST_F(RS485BusTest, writing_a_byte_that_eventually_returns_correct_value) {
-  bus8.setReadBackDelayMs(7);
+  bus8.setReadBackDelay(7);
   bus8.setReadBackRetries(1);
 
   buffer << 0x21 << 0x37;
@@ -264,7 +264,7 @@ TEST_F(RS485BusTest, writing_a_byte_if_that_byte_is_in_that_prefetched_buffer) {
 }
 
 TEST_F(RS485BusTest, fetching_bytes_before_write_returns_no_write_new_bytes) {
-  bus8.setPreFetchDelayMs(7);
+  bus8.setPreFetchDelay(7);
   bus8.setPreFetchRetries(2);
 
   buffer << 0x21 << 0x34;
