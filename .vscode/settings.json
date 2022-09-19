@@ -72,6 +72,7 @@
     "map": "cpp",
     "set": "cpp",
     "filesystem": "cpp",
-    "*.keepme": "cpp"
+    "*.keepme": "cpp",
+    "deque": "cpp"
   }
 }

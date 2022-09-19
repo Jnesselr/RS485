@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../assertable_buffer.hpp"
+#include "../assertable_bus_io.hpp"
 #include "../fixtures.h"
 
 #include <ArduinoFake.h>
@@ -12,15 +12,15 @@ using namespace fakeit;
 class RS485BusTest : public PrepBus {
 public:
   RS485BusTest(): PrepBus(),
-    bus2(buffer, readEnablePin, writeEnablePin),
-    bus8(buffer, readEnablePin, writeEnablePin) {}
+    bus2(busIO, readEnablePin, writeEnablePin),
+    bus8(busIO, readEnablePin, writeEnablePin) {}
 
   void SetUp() {
     ArduinoFake().ClearInvocationHistory();
   };
 
-  AssertableBuffer buffer;
-  Mock<AssertableBuffer> spy = buffer.spy();
+  AssertableBusIO busIO;
+  Mock<AssertableBusIO> spy = busIO.spy();
 
   RS485Bus<2> bus2;
   RS485Bus<8> bus8;
@@ -39,26 +39,26 @@ TEST_F(RS485BusTest, empty_buffer_does_nothing) {
   bus8.fetch();
 
   EXPECT_EQ(0, bus8.available());
-  EXPECT_EQ(0, buffer.available());
+  EXPECT_EQ(0, busIO.available());
 }
 
 TEST_F(RS485BusTest, can_fetch_available_bytes) {
-  buffer << 1 << 2 << 3;
+  busIO << 1 << 2 << 3;
 
   EXPECT_EQ(0, bus8.available());
 
   EXPECT_EQ(3, bus8.fetch());
   EXPECT_EQ(3, bus8.available());
-  EXPECT_EQ(0, buffer.available());
+  EXPECT_EQ(0, busIO.available());
   EXPECT_EQ(1, bus8[0]);
   EXPECT_EQ(2, bus8[1]);
   EXPECT_EQ(3, bus8[2]);
   EXPECT_EQ(-1, bus8[3]);
 
-  // Read another byte in to the read/write buffer, but don't fetch it
-  buffer << 4;
+  // Read another byte in to the read/write busIO, but don't fetch it
+  busIO << 4;
   EXPECT_EQ(3, bus8.available());
-  EXPECT_EQ(1, buffer.available());
+  EXPECT_EQ(1, busIO.available());
   EXPECT_EQ(1, bus8[0]);
   EXPECT_EQ(2, bus8[1]);
   EXPECT_EQ(3, bus8[2]);
@@ -73,26 +73,26 @@ TEST_F(RS485BusTest, can_fetch_available_bytes) {
 }
 
 TEST_F(RS485BusTest, will_not_fetch_bytes_if_internal_buffer_is_full) {
-  buffer << 1 << 2 << 3;
+  busIO << 1 << 2 << 3;
 
-  EXPECT_EQ(3, buffer.available());
+  EXPECT_EQ(3, busIO.available());
   EXPECT_EQ(0, bus2.available());
 
   bus2.fetch();
 
-  EXPECT_EQ(1, buffer.available());
+  EXPECT_EQ(1, busIO.available());
   EXPECT_EQ(2, bus2.available());
 
   EXPECT_EQ(1, bus2[0]);
   EXPECT_EQ(2, bus2[1]);
   EXPECT_EQ(-1, bus2[2]);
 
-  EXPECT_EQ(3, buffer[0]);
-  EXPECT_EQ(-1, buffer[1]);
+  EXPECT_EQ(3, busIO[0]);
+  EXPECT_EQ(-1, busIO[1]);
 }
 
 TEST_F(RS485BusTest, by_default_read_pin_is_enabled_and_write_is_disabled) {
-  RS485Bus<8> bus(buffer, readEnablePin, writeEnablePin);
+  RS485Bus<8> bus(busIO, readEnablePin, writeEnablePin);
 
   Verify(Method(ArduinoFake(), pinMode).Using(readEnablePin, OUTPUT)).Once();
   Verify(Method(ArduinoFake(), pinMode).Using(writeEnablePin, OUTPUT)).Once();
@@ -101,7 +101,7 @@ TEST_F(RS485BusTest, by_default_read_pin_is_enabled_and_write_is_disabled) {
 }
 
 TEST_F(RS485BusTest, writing_a_byte_verifies_it_was_written) {
-  buffer << 0x37;  // Next byte to be read
+  busIO << 0x37;  // Next byte to be read
   When(Method(spy, available)).Return(0, 1);
 
   EXPECT_EQ(WriteResult::OK, bus8.write(0x37));
@@ -119,7 +119,7 @@ TEST_F(RS485BusTest, writing_a_byte_verifies_it_was_written) {
 }
 
 TEST_F(RS485BusTest, writing_a_byte_when_a_different_one_is_read) {
-  buffer << 0x21;  // Next byte to be read
+  busIO << 0x21;  // Next byte to be read
   When(Method(spy, available)).Return(0, 1, 0);
 
   EXPECT_EQ(WriteResult::FAILED_READ_BACK, bus8.write(0x37));
@@ -138,7 +138,7 @@ TEST_F(RS485BusTest, writing_a_byte_when_a_different_one_is_read) {
 }
 
 TEST_F(RS485BusTest, writing_a_byte_when_a_different_one_is_read_first) {
-  buffer << 0x21 << 0x05 << 0x37;  // Next byte to be read
+  busIO << 0x21 << 0x05 << 0x37;  // Next byte to be read
   When(Method(spy, available)).Return(0, 3, 2, 1, 0);
 
   EXPECT_EQ(WriteResult::UNEXPECTED_EXTRA_BYTES, bus8.write(0x37));
@@ -211,7 +211,7 @@ TEST_F(RS485BusTest, writing_a_byte_that_eventually_returns_correct_value) {
   bus8.setReadBackDelay(7);
   bus8.setReadBackRetries(1);
 
-  buffer << 0x21 << 0x37;
+  busIO << 0x21 << 0x37;
   When(Method(spy, available)).Return(0, 0, 1, 0, 1);
 
   EXPECT_EQ(WriteResult::UNEXPECTED_EXTRA_BYTES, bus8.write(0x37));
@@ -238,7 +238,7 @@ TEST_F(RS485BusTest, writing_a_byte_that_eventually_returns_correct_value) {
 }
 
 TEST_F(RS485BusTest, writing_a_byte_if_that_byte_is_in_that_prefetched_buffer) {
-  buffer << 0x21 << 0x37;
+  busIO << 0x21 << 0x37;
   bus8.fetch();
   spy.ClearInvocationHistory();
 
@@ -246,7 +246,7 @@ TEST_F(RS485BusTest, writing_a_byte_if_that_byte_is_in_that_prefetched_buffer) {
   EXPECT_EQ(0x37, bus8[1]);
   EXPECT_EQ(-1, bus8[2]);
 
-  buffer << 0x37; // What we're about to write
+  busIO << 0x37; // What we're about to write
   When(Method(spy, available)).Return(0, 1);
 
   EXPECT_EQ(WriteResult::OK, bus8.write(0x37));
@@ -267,7 +267,7 @@ TEST_F(RS485BusTest, fetching_bytes_before_write_returns_no_write_new_bytes) {
   bus8.setPreFetchDelay(7);
   bus8.setPreFetchRetries(2);
 
-  buffer << 0x21 << 0x34;
+  busIO << 0x21 << 0x34;
   When(Method(spy, available)).Return(1, 0, 0, 1, 0, 0, 0, 0);
 
   EXPECT_EQ(WriteResult::NO_WRITE_NEW_BYTES, bus8.write(0x37));
@@ -300,7 +300,7 @@ TEST_F(RS485BusTest, fetching_bytes_before_write_returns_no_write_new_bytes) {
 }
 
 TEST_F(RS485BusTest, write_when_buffer_should_already_be_full) {
-  buffer << 0x21 << 0x30 << 0x37;
+  busIO << 0x21 << 0x30 << 0x37;
   bus2.setReadBackRetries(0);
 
   EXPECT_EQ(WriteResult::NO_WRITE_BUFFER_FULL, bus2.write(0x37));
@@ -319,15 +319,15 @@ TEST_F(RS485BusTest, write_when_buffer_should_already_be_full) {
   EXPECT_EQ(0x21, bus2[0]);
   EXPECT_EQ(0x30, bus2[1]);
   EXPECT_EQ(-1, bus2[2]);
-  EXPECT_EQ(1, buffer.available()); // 1 byte style available
+  EXPECT_EQ(1, busIO.available()); // 1 byte style available
 }
 
 /**
  * Simulate what would happen if no bytes appeared available, so we wrote our byte, but then
- * proceeded to see other new bytes that filled the buffer.
+ * proceeded to see other new bytes that filled the busIO.
  */
 TEST_F(RS485BusTest, write_when_buffer_becomes_full) {
-  buffer << 0x21 << 0x30 << 0x37;
+  busIO << 0x21 << 0x30 << 0x37;
   bus2.setReadBackRetries(0);
 
   When(Method(spy, available)).Return(0, 3, 2, 1);
@@ -351,11 +351,11 @@ TEST_F(RS485BusTest, write_when_buffer_becomes_full) {
   EXPECT_EQ(0x21, bus2[0]);
   EXPECT_EQ(0x30, bus2[1]);
   EXPECT_EQ(-1, bus2[2]);
-  EXPECT_EQ(1, buffer.available()); // 1 byte still available
+  EXPECT_EQ(1, busIO.available()); // 1 byte still available
 }
 
 TEST_F(RS485BusTest, write_when_buffer_becomes_full_but_no_more_is_available) {
-  buffer << 0x21 << 0x30;
+  busIO << 0x21 << 0x30;
   bus2.setReadBackRetries(0);
 
   When(Method(spy, available)).Return(0, 2, 1, 0);
@@ -382,7 +382,7 @@ TEST_F(RS485BusTest, write_when_buffer_becomes_full_but_no_more_is_available) {
 }
 
 TEST_F(RS485BusTest, read_calls_fetch) {
-  buffer << 1 << 2 << 3;
+  busIO << 1 << 2 << 3;
 
   // We haven't called fetch internally
   EXPECT_EQ(0, bus8.available());
@@ -401,10 +401,10 @@ TEST_F(RS485BusTest, read_calls_fetch) {
 }
 
 TEST_F(RS485BusTest, read_fetches_even_if_not_all_bytes_have_been_read) {
-  buffer << 1;
+  busIO << 1;
 
   bus8.fetch();
-  buffer << 2 << 3;
+  busIO << 2 << 3;
   EXPECT_EQ(1, bus8.available());
 
   EXPECT_EQ(1, bus8.read());
@@ -421,7 +421,7 @@ TEST_F(RS485BusTest, read_fetches_even_if_not_all_bytes_have_been_read) {
 }
 
 TEST_F(RS485BusTest, read_clears_full_flag) {
-  buffer << 1 << 2;
+  busIO << 1 << 2;
 
   bus2.fetch();
   EXPECT_EQ(2, bus2.available());

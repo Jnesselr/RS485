@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../assertable_buffer.hpp"
 #include "../matching_bytes.h"
 
 #include <gtest/gtest.h>

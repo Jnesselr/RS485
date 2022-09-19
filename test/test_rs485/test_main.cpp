@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 // Test Helpers
-#include "test_assertable_buffer.h"
+#include "test_assertable_bus_io.h"
 #include "test_matching_bytes.h"
 
 // Core code

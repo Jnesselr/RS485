@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../assertable_buffer.hpp"
+#include "../../assertable_bus_io.hpp"
 #include "../../fixtures.h"
 
 #include <gtest/gtest.h>
@@ -13,14 +13,14 @@ class FilterByValueTest : public PrepBus {
 protected:
   FilterByValueTest(): PrepBus(),
     filterAhead5(5),
-    bus(buffer, readEnablePin, writeEnablePin) {}
+    bus(busIO, readEnablePin, writeEnablePin) {}
 
   // using bytesFunction = void (*)(unsigned char);
   template<typename T>
   void forBytes(const T &func) {
     uint8_t i = 0;
     do {
-      buffer << i;
+      busIO << i;
       bus.fetch();
 
       func(i);
@@ -32,7 +32,7 @@ protected:
 
   FilterByValue filter;
   FilterByValue filterAhead5;
-  AssertableBuffer buffer;
+  AssertableBusIO busIO;
   RS485Bus<8> bus;
 };
 
@@ -93,7 +93,7 @@ TEST_F(FilterByValueTest, pre_filter_respects_look_ahead) {
     uint8_t plusOne = i + 1;
     filterAhead5.preValues.rejectAll();
     filterAhead5.preValues.allow(plusOne);
-    buffer << i << i << i << i << plusOne;
+    busIO << i << i << i << i << plusOne;
     bus.fetch();
 
     EXPECT_TRUE(filterAhead5.preFilter(bus, 0)) << "Filter should allow " << plusOne;
@@ -108,7 +108,7 @@ TEST_F(FilterByValueTest, pre_filter_respects_start_index) {
     uint8_t plusOne = i + 1;
     filterAhead5.preValues.rejectAll();
     filterAhead5.preValues.allow(plusOne);
-    buffer << i << i << i << i << i << plusOne;
+    busIO << i << i << i << i << i << plusOne;
     bus.fetch();
 
     EXPECT_FALSE(filterAhead5.preFilter(bus, 0)) << "Filter should reject " << i;
@@ -155,7 +155,7 @@ TEST_F(FilterByValueTest, post_filter_respects_look_ahead) {
     uint8_t plusOne = i + 1;
     filterAhead5.postValues.rejectAll();
     filterAhead5.postValues.allow(plusOne);
-    buffer << i << i << i << i << plusOne;
+    busIO << i << i << i << i << plusOne;
     bus.fetch();
 
     EXPECT_TRUE(filterAhead5.postFilter(bus, 0, 5)) << "Filter should allow " << plusOne;
@@ -169,7 +169,7 @@ TEST_F(FilterByValueTest, post_filter_respects_start_index) {
     uint8_t plusOne = i + 1;
     filterAhead5.postValues.rejectAll();
     filterAhead5.postValues.allow(plusOne);
-    buffer << i << i << i << i << i << plusOne;
+    busIO << i << i << i << i << i << plusOne;
     bus.fetch();
 
     EXPECT_FALSE(filterAhead5.postFilter(bus, 0, 5)) << "Filter should reject " << i;
@@ -179,7 +179,7 @@ TEST_F(FilterByValueTest, post_filter_respects_start_index) {
 
 TEST_F(FilterByValueTest, post_filter_will_not_look_past_shorter_end_index) {
   filterAhead5.postValues.allowAll();
-  buffer << 0 << 0 << 0 << 0 << 0 << 1;
+  busIO << 0 << 0 << 0 << 0 << 0 << 1;
   bus.fetch();
 
   EXPECT_FALSE(filterAhead5.postFilter(bus, 0, 0)) << "Filter should not search past endIndex";
@@ -192,7 +192,7 @@ TEST_F(FilterByValueTest, post_filter_will_not_look_past_shorter_end_index) {
 
 TEST_F(FilterByValueTest, post_filter_will_not_look_past_shorter_end_index_with_nonzero_start_index) {
   filterAhead5.postValues.allowAll();
-  buffer << 0 << 0 << 0 << 0 << 0 << 0 << 1;
+  busIO << 0 << 0 << 0 << 0 << 0 << 0 << 1;
   bus.fetch();
 
   EXPECT_FALSE(filterAhead5.postFilter(bus, 1, 1)) << "Filter should not search past endIndex";
