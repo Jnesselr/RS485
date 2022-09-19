@@ -2,13 +2,13 @@
 
 #include <inttypes.h>
 
-#include "rs485/read_write_buffer.h"
+#include "rs485/bus_io.h"
 #include "fakeit/fakeit.hpp"
 
 #include <initializer_list>
 
 
-class AssertableBuffer: public ReadWriteBuffer {
+class AssertableBuffer: public BusIO {
 public:
   AssertableBuffer();
 
