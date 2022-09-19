@@ -19,6 +19,7 @@ protected:
 
   void SetUp() {
     When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
+    Spy(Method(protocolSpy, isPacket));
 
     ArduinoFake().ClearInvocationHistory();
   };
@@ -133,20 +134,6 @@ TEST_F(PacketizerReadBus3Test, not_enough_bytes_get_skipped_if_buffer_is_full) {
 TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
   constexpr size_t u64Size = PacketizerReadBusBigTest::u64Size;
 
-  // AWFUL HACK ALERT - related: https://github.com/eranpeer/FakeIt/issues/274
-  // Essentially, we can't verify captured arguments. So we have an array to verify if we've called in using the correct parameters.
-  // We also don't want to re-implement what ProtocolMatchingBytes does so we create a new instance that we defer to, since our main instance is being spied on.
-  bool wasCalledAssert[bufferSize] = { false };
-  size_t endIndexAssert[bufferSize] = { 0 };
-  ProtocolMatchingBytes baseProtocol;
-  When(Method(protocolSpy, isPacket)).AlwaysDo([&](const RS485BusBase& bus, size_t startIndex, size_t& endIndex)->PacketStatus {
-    wasCalledAssert[startIndex] = true;
-    PacketStatus result = baseProtocol.isPacket(bus, startIndex, endIndex);
-
-    endIndexAssert[startIndex] = endIndex;
-    return result;
-  });
-
   for(size_t i = 0; i < u64Size; i++) {
     // Even values of i is "not enough bytes", odd is "no" and we want both. We can't just alternate or we'll get a valid packet, though. We also need it to start with "not enough bytes" so nothing gets shifted.
     busIO << i;
@@ -163,38 +150,25 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
   // -- We want to verify that "isPacket" got called on everything
 
   for(size_t i = 0; i < u64Size; i++) {
-    EXPECT_TRUE(wasCalledAssert[i]) << "Was not called for start index " << i;
-
-    EXPECT_EQ(endIndexAssert[i], u64Size - 1) << "Bad end index for start index " << i;
+    Verify(Method(protocolSpy, isPacket).Using(_, i, u64Size - 1)).Once();
   }
+  VerifyNoOtherInvocations(Method(protocolSpy, isPacket));
 
   // -- Now we want to call hasPacket again and verify that nothing gets called because no new bytes became available
-
-  // Reset everthing
-  memset(wasCalledAssert, false, sizeof(wasCalledAssert));
-  memset(endIndexAssert, 0, sizeof(endIndexAssert));
 
   // Call our hasPacket method
   EXPECT_FALSE(packetizer.hasPacket());
   EXPECT_EQ(0, packetizer.packetLength());
   EXPECT_EQ(u64Size, bus.available());
 
-  // And finally, verify
-  for(size_t i = 0; i < u64Size; i++) {
-    EXPECT_FALSE(wasCalledAssert[i]) << "Was called for start index " << i << " when it should not have been";
-
-    EXPECT_EQ(endIndexAssert[i], 0) << "Bad end index for start index " << i;
-  }
+  // And verify
+  VerifyNoOtherInvocations(Method(protocolSpy, isPacket));
 
   // -- We want to complete a packet that was "not enough bytes" before. Since the size of a long will always be even, we match with size - 2. (size - 1) is currently the last byte on the busIO.
 
   // Queue up an even number, plus a "no", plus a "not enough bytes"
   uint8_t validPacketByte = u64Size - 2;
   busIO << validPacketByte << (u64Size + 1) << (u64Size + 2);
-
-  // Reset everthing
-  memset(wasCalledAssert, false, sizeof(wasCalledAssert));
-  memset(endIndexAssert, 0, sizeof(endIndexAssert));
 
   // Call our hasPacket method
   EXPECT_TRUE(packetizer.hasPacket());
@@ -204,29 +178,16 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
   // And finally, verify
   for(size_t i = 0; i < u64Size; i++) {
     if(i % 2 == 0) {
-      EXPECT_TRUE(wasCalledAssert[i]) << "Was not called for start index " << i;
-
-      if(i == validPacketByte) {
-        EXPECT_EQ(endIndexAssert[i], u64Size) << "Bad end index for start index " << i;
-      } else {
-        EXPECT_EQ(endIndexAssert[i], u64Size + 2) << "Bad end index for start index " << i;
-      }
+      Verify(Method(protocolSpy, isPacket).Using(_, i, u64Size + 2)).Once();
     } else {
-      EXPECT_FALSE(wasCalledAssert[i]) << "Was called for start index " << i << " when it should not have been";
-
-      EXPECT_EQ(endIndexAssert[i], 0) << "Bad end index for start index " << i;
+      Verify(Method(protocolSpy, isPacket).Using(_, i, u64Size + 2)).Never();
     }
   }
 
-  EXPECT_FALSE(wasCalledAssert[u64Size]) << "No bytes after valid packet should have been tested";
-  EXPECT_FALSE(wasCalledAssert[u64Size+1]) << "No bytes after valid packet should have been tested";
-  EXPECT_FALSE(wasCalledAssert[u64Size+2]) << "No bytes after valid packet should have been tested";
+  // No bytes after valid packet should have been tested
+  VerifyNoOtherInvocations(Method(protocolSpy, isPacket));
 
   // -- Nothing should have changed, but we want to verify we can still see the packet with nothing having been called
-
-  // Reset everthing
-  memset(wasCalledAssert, false, sizeof(wasCalledAssert));
-  memset(endIndexAssert, 0, sizeof(endIndexAssert));
 
   // Call our hasPacket method
   EXPECT_TRUE(packetizer.hasPacket());
@@ -234,26 +195,19 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
   EXPECT_EQ(5, bus.available());  // Everything else got cleared out but the packet and our two extra bytes
 
   // Verify nothing was called, meaning the packetizer cached the reuslt from last time
-  for(size_t i = 0; i < u64Size; i++) {
-    EXPECT_FALSE(wasCalledAssert[i]) << "Was called for start index " << i << " when it should not have been";
-
-    EXPECT_EQ(endIndexAssert[i], 0) << "Bad end index for start index " << i;
-  }
+  VerifyNoOtherInvocations(Method(protocolSpy, isPacket));
 
   // -- Clearing the packet will result in (u64Size + 1) and (u64Size + 2) being on the bus. The first is "no" so goes away. We do this step to make sure previous times where things were not re-checked will get re-checked again.
   packetizer.clearPacket();
   EXPECT_EQ(2, bus.available());  // (u64Size + 1) and (u64Size + 2)
 
-  // Reset everthing
-  memset(wasCalledAssert, false, sizeof(wasCalledAssert));
-  memset(endIndexAssert, 0, sizeof(endIndexAssert));
-
   // Call our hasPacket method
   EXPECT_FALSE(packetizer.hasPacket());
   EXPECT_EQ(0, packetizer.packetLength());
 
-  EXPECT_TRUE(wasCalledAssert[0]) << "isPacket was not called again on the first byte when it should have been";
-  EXPECT_EQ(0, endIndexAssert[0]);
+  Verify(Method(protocolSpy, isPacket).Using(_, 0, 0)).Once();  // (ul64Size + 1) byte -> NO
+  Verify(Method(protocolSpy, isPacket).Using(_, 0, 1)).Once();  // (ul64Size + 2) byte -> NOT_ENOUGH_BYTES
+  VerifyNoOtherInvocations(Method(protocolSpy, isPacket));
 
   EXPECT_EQ(1, bus.available());  // Only (u64Size + 2) is on the bus now
   EXPECT_EQ(u64Size + 2, bus[0]);
@@ -262,20 +216,6 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
 
 TEST_F(PacketizerReadBusBigTest, no_bytes_past_our_limit_get_rechecked) {
   constexpr size_t u64Size = PacketizerReadBusBigTest::u64Size;
-
-  // AWFUL HACK ALERT - related: https://github.com/eranpeer/FakeIt/issues/274
-  // Essentially, we can't verify captured arguments. So we have an array to verify if we've called in using the correct parameters.
-  // We also don't want to re-implement what ProtocolMatchingBytes does so we create a new instance that we defer to, since our main instance is being spied on.
-  bool wasCalledAssert[bufferSize] = { false };
-  size_t endIndexAssert[bufferSize] = { 0 };
-  ProtocolMatchingBytes baseProtocol;
-  When(Method(protocolSpy, isPacket)).AlwaysDo([&](const RS485BusBase& bus, size_t startIndex, size_t& endIndex)->PacketStatus {
-    wasCalledAssert[startIndex] = true;
-    PacketStatus result = baseProtocol.isPacket(bus, startIndex, endIndex);
-
-    endIndexAssert[startIndex] = endIndex;
-    return result;
-  });
 
   // Even values of i is "not enough bytes", odd is "no" and we want both. (2 * i + 1) will always be odd. We want u64Size+1 bytes of that.
   busIO << 0; // Start with an even byte so we don't automatically shift all the "no" answers away.
@@ -292,27 +232,19 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_past_our_limit_get_rechecked) {
   EXPECT_EQ(u64Size + 1, bus.available());
 
   // -- We want to verify that "isPacket" got called on everything
-
   for(size_t i = 0; i < bus.bufferSize(); i++) {
     if(i <= u64Size) {
-      EXPECT_TRUE(wasCalledAssert[i]) << "Was not called for start index " << i;
-
-      EXPECT_EQ(endIndexAssert[i], u64Size) << "Bad end index for start index " << i;
+      Verify(Method(protocolSpy, isPacket).Using(_, i, u64Size)).Once();
     } else {
-      EXPECT_FALSE(wasCalledAssert[i]) << "Was called for start index " << i;
-
-      EXPECT_EQ(endIndexAssert[i], 0) << "Bad end index for start index " << i;
+      Verify(Method(protocolSpy, isPacket).Using(_, i, u64Size)).Never();
     }
   }
+  VerifyNoOtherInvocations(Method(protocolSpy, isPacket));
 
   // -- Now we want to call hasPacket again and verify that the NO past u64Size gets called on again.
 
   // Queue a byte that will get checked regardless. Otherwise hasPacket will exit without rechecking anything
   busIO << 255;
-
-  // Reset everthing
-  memset(wasCalledAssert, false, sizeof(wasCalledAssert));
-  memset(endIndexAssert, 0, sizeof(endIndexAssert));
 
   // Call our hasPacket method
   EXPECT_FALSE(packetizer.hasPacket());
@@ -323,15 +255,12 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_past_our_limit_get_rechecked) {
   // (u64Size + 1) wasn't ever checked, (0) is our "not enough bytes", and (u64Size) is past where we're able to check it.
   for(size_t i = 0; i < bus.bufferSize(); i++) {
     if(i == 0 || i == u64Size || i == (u64Size + 1)) {
-      EXPECT_TRUE(wasCalledAssert[i]) << "Was not called for start index " << i;
-
-      EXPECT_EQ(endIndexAssert[i], u64Size + 1) << "Bad end index for start index " << i;
+      Verify(Method(protocolSpy, isPacket).Using(_, i, u64Size + 1)).Once();
     } else {
-      EXPECT_FALSE(wasCalledAssert[i]) << "Was called for start index " << i;
-
-      EXPECT_EQ(endIndexAssert[i], 0) << "Bad end index for start index " << i;
+      Verify(Method(protocolSpy, isPacket).Using(_, i, u64Size + 1)).Never();
     }
   }
+  VerifyNoOtherInvocations(Method(protocolSpy, isPacket));
 }
 
 TEST_F(PacketizerReadBus3Test, can_get_packet_even_if_it_is_past_bus_size_if_bytes_are_shifted) {

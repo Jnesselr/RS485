@@ -11,5 +11,5 @@
  */
 class HippoFeedProtocol : public Protocol {
 public:
-  virtual PacketStatus isPacket(const RS485BusBase& bus, size_t startIndex, size_t& endIndex) const;
+  virtual IsPacketResult isPacket(const RS485BusBase& bus, size_t startIndex, size_t endIndex) const;
 };
