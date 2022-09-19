@@ -74,7 +74,7 @@ protected:
 private:
   void putByteInBuffer(uint8_t value);
 
-  BusIO& buffer;
+  BusIO& busIO;
   uint8_t readEnablePin;
   uint8_t writeEnablePin;
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../assertable_buffer.hpp"
+#include "../assertable_bus_io.hpp"
 #include "../matching_bytes.h"
 #include "../fixtures.h"
 
@@ -11,19 +11,19 @@
 class ProtocolMatchingBytesTest : public PrepBus {
 public:
   ProtocolMatchingBytesTest(): PrepBus(),
-    bus(buffer, readEnablePin, writeEnablePin) {}
+    bus(busIO, readEnablePin, writeEnablePin) {}
 
   void SetUp() {
     ArduinoFake().ClearInvocationHistory();
   };
 
-  AssertableBuffer buffer;
+  AssertableBusIO busIO;
   RS485Bus<8> bus;
   ProtocolMatchingBytes protocol;
 };
 
 TEST_F(ProtocolMatchingBytesTest, single_byte_odd) {
-  buffer << 0x01;
+  busIO << 0x01;
   bus.fetch();
 
   size_t endIndex = 0;
@@ -31,7 +31,7 @@ TEST_F(ProtocolMatchingBytesTest, single_byte_odd) {
 }
 
 TEST_F(ProtocolMatchingBytesTest, single_byte_even) {
-  buffer << 0x02;
+  busIO << 0x02;
   bus.fetch();
 
   size_t endIndex = 0;
@@ -39,7 +39,7 @@ TEST_F(ProtocolMatchingBytesTest, single_byte_even) {
 }
 
 TEST_F(ProtocolMatchingBytesTest, various_packets) {
-  buffer << 0x01 << 0x02 << 0x03 << 0x01 << 0xff << 0xfe << 0x02;
+  busIO << 0x01 << 0x02 << 0x03 << 0x01 << 0xff << 0xfe << 0x02;
   bus.fetch();
 
   size_t endIndex = 6;

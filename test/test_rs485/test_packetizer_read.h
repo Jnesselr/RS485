@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../assertable_buffer.hpp"
+#include "../assertable_bus_io.hpp"
 #include "../matching_bytes.h"
 #include "../fixtures.h"
 
@@ -23,7 +23,7 @@ protected:
     ArduinoFake().ClearInvocationHistory();
   };
 
-  AssertableBuffer buffer;
+  AssertableBusIO busIO;
   ProtocolMatchingBytes protocol;
   Mock<ProtocolMatchingBytes> protocolSpy;
 };
@@ -31,7 +31,7 @@ protected:
 class PacketizerReadBusTest : public PacketizerReadTest {
 protected:
   PacketizerReadBusTest(): PacketizerReadTest(),
-    bus(buffer, readEnablePin, writeEnablePin),
+    bus(busIO, readEnablePin, writeEnablePin),
     packetizer(bus, protocol) {}
 
   RS485Bus<8> bus;
@@ -41,7 +41,7 @@ protected:
 class PacketizerReadBus3Test : public PacketizerReadTest {
 protected:
   PacketizerReadBus3Test(): PacketizerReadTest(),
-    bus(buffer, readEnablePin, writeEnablePin),
+    bus(busIO, readEnablePin, writeEnablePin),
     packetizer(bus, protocol) {}
 
   RS485Bus<3> bus;
@@ -51,7 +51,7 @@ protected:
 class PacketizerReadBusBigTest : public PacketizerReadTest {
 protected:
   PacketizerReadBusBigTest(): PacketizerReadTest(),
-    bus(buffer, readEnablePin, writeEnablePin),
+    bus(busIO, readEnablePin, writeEnablePin),
     packetizer(bus, protocol) {}
 
   constexpr static size_t u64Size = sizeof(uint64_t) * 8;  // Needs to match the date type used for recheckBitmap in Packetizer
@@ -66,7 +66,7 @@ TEST_F(PacketizerReadBusTest, by_default_no_packets_are_available) {
 }
 
 TEST_F(PacketizerReadBusTest, can_get_simple_packet) {
-  buffer << 0x01 << 0x02 << 0x03 << 0x02 << 0x04;
+  busIO << 0x01 << 0x02 << 0x03 << 0x02 << 0x04;
 
   // Ensure the bus hasn't fetched a single byte from the serial bus yet, meaning the packetizer calls fetch
   EXPECT_EQ(0, bus.available());
@@ -91,7 +91,7 @@ TEST_F(PacketizerReadBusTest, can_get_simple_packet) {
 }
 
 TEST_F(PacketizerReadBusTest, only_no_bytes_get_skipped) {
-  buffer << 0x01 << 0x03 << 0x02 << 0x05;
+  busIO << 0x01 << 0x03 << 0x02 << 0x05;
 
   // Ensure the bus hasn't fetched a single byte from the serial bus yet, meaning the packetizer calls fetch
   EXPECT_EQ(0, bus.available());
@@ -108,7 +108,7 @@ TEST_F(PacketizerReadBusTest, only_no_bytes_get_skipped) {
 
 TEST_F(PacketizerReadBus3Test, not_enough_bytes_get_skipped_if_buffer_is_full) {
   // All of these values return "not enough bytes", but only 0x02 will be skipped
-  buffer << 0x02 << 0x04 << 0x6;
+  busIO << 0x02 << 0x04 << 0x6;
 
   // Ensure the bus hasn't fetched a single byte from the serial bus yet, meaning the packetizer calls fetch
   EXPECT_EQ(0, bus.available());
@@ -149,7 +149,7 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
 
   for(size_t i = 0; i < u64Size; i++) {
     // Even values of i is "not enough bytes", odd is "no" and we want both. We can't just alternate or we'll get a valid packet, though. We also need it to start with "not enough bytes" so nothing gets shifted.
-    buffer << i;
+    busIO << i;
   }
   
   // Ensure the bus hasn't fetched a single byte from the serial bus yet, meaning the packetizer calls fetch
@@ -186,11 +186,11 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
     EXPECT_EQ(endIndexAssert[i], 0) << "Bad end index for start index " << i;
   }
 
-  // -- We want to complete a packet that was "not enough bytes" before. Since the size of a long will always be even, we match with size - 2. (size - 1) is currently the last byte on the buffer.
+  // -- We want to complete a packet that was "not enough bytes" before. Since the size of a long will always be even, we match with size - 2. (size - 1) is currently the last byte on the busIO.
 
   // Queue up an even number, plus a "no", plus a "not enough bytes"
   uint8_t validPacketByte = u64Size - 2;
-  buffer << validPacketByte << (u64Size + 1) << (u64Size + 2);
+  busIO << validPacketByte << (u64Size + 1) << (u64Size + 2);
 
   // Reset everthing
   memset(wasCalledAssert, false, sizeof(wasCalledAssert));
@@ -278,9 +278,9 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_past_our_limit_get_rechecked) {
   });
 
   // Even values of i is "not enough bytes", odd is "no" and we want both. (2 * i + 1) will always be odd. We want u64Size+1 bytes of that.
-  buffer << 0; // Start with an even byte so we don't automatically shift all the "no" answers away.
+  busIO << 0; // Start with an even byte so we don't automatically shift all the "no" answers away.
   for(size_t i = 0; i < u64Size; i++) {
-    buffer << 2 * i + 1;
+    busIO << 2 * i + 1;
   }
   
   // Ensure the bus hasn't fetched a single byte from the serial bus yet, meaning the packetizer calls fetch
@@ -308,7 +308,7 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_past_our_limit_get_rechecked) {
   // -- Now we want to call hasPacket again and verify that the NO past u64Size gets called on again.
 
   // Queue a byte that will get checked regardless. Otherwise hasPacket will exit without rechecking anything
-  buffer << 255;
+  busIO << 255;
 
   // Reset everthing
   memset(wasCalledAssert, false, sizeof(wasCalledAssert));
@@ -336,19 +336,19 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_past_our_limit_get_rechecked) {
 
 TEST_F(PacketizerReadBus3Test, can_get_packet_even_if_it_is_past_bus_size_if_bytes_are_shifted) {
   // This format and bus size is specifically so already checked "no" bytes do get removed if they're at the beginning
-  buffer << 0x01 << 0x02 << 0x03 << 0x04 << 0x06 << 0x06;
+  busIO << 0x01 << 0x02 << 0x03 << 0x04 << 0x06 << 0x06;
   /*
   This is the worked out explanation. neb == "not enough bytes".
 
   01 02 03 | first fetch
   02 03 -- | "no" gets shifted, lastBusAvailable becomes 2.
-  02 03 -- | "neb" stays, buffer isn't full. 03 gets a no.
+  02 03 -- | "neb" stays, busIO isn't full. 03 gets a no.
   02 03 04 | fetch is called. lastBusAvailable (2) != bus available (3), so continue with lastBusAvailable as 3. 0x2 and 0x4 are checked
-  03 04 -- | buffer is full, so "neb" is removed. lastBusAvailable becomes 2
+  03 04 -- | busIO is full, so "neb" is removed. lastBusAvailable becomes 2
   04 -- -- | "no" gets shifted, lastBusAvailable becomes 1.
-  04 -- -- | "neb" stays, buffer isn't full.
+  04 -- -- | "neb" stays, busIO isn't full.
   04 06 06 | fetch is called. lastBusAvailable (1) != bus available (3), so continue with lastBusAvailable as 3.
-  06 06 -- | "neb" 04 is removed since the buffer is full
+  06 06 -- | "neb" 04 is removed since the busIO is full
   06 06 -- | yes is found! 0x06 <-> 0x06 is our packet
   */
 
@@ -379,7 +379,7 @@ TEST_F(PacketizerReadBus3Test, can_get_packet_even_if_it_is_past_bus_size_if_byt
 TEST_F(PacketizerReadBus3Test, cannot_get_packet_if_timeout_is_reached) {
   packetizer.setMaxReadTimeout(200);
 
-  buffer << 0x01 << 0x02 << 0x03 << 0x04 << 0x06 << 0x06;
+  busIO << 0x01 << 0x02 << 0x03 << 0x04 << 0x06 << 0x06;
   When(Method(ArduinoFake(), millis)).Return(
     0,    // Start time ms
     10,   // fetch from bus time

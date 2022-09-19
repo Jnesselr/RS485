@@ -1,7 +1,7 @@
 #include "rs485/rs485bus_base.h"
 
-RS485BusBase::RS485BusBase(BusIO& buffer, uint8_t readEnablePin, uint8_t writeEnablePin) :
-  buffer(buffer),
+RS485BusBase::RS485BusBase(BusIO& busIO, uint8_t readEnablePin, uint8_t writeEnablePin) :
+  busIO(busIO),
   readEnablePin(readEnablePin),
   writeEnablePin(writeEnablePin) {
     pinMode(readEnablePin, OUTPUT);
@@ -32,19 +32,19 @@ WriteResult RS485BusBase::write(uint8_t writeValue) {
 
   digitalWrite(writeEnablePin, HIGH);
 
-  buffer.write(writeValue);
+  busIO.write(writeValue);
 
   digitalWrite(writeEnablePin, LOW);
 
   bool readUnexpectedBytes = false;
 
   while(true) {
-    bool bytesAvailable = (buffer.available() > 0);
+    bool bytesAvailable = (busIO.available() > 0);
     if(! bytesAvailable) {
       for(int i=0; i < readBackRetryCount; i++) {
         delay(readBackRetryMs);
 
-        bytesAvailable |= (buffer.available() > 0);
+        bytesAvailable |= (busIO.available() > 0);
         if(bytesAvailable) {
           break;
         }
@@ -64,7 +64,7 @@ WriteResult RS485BusBase::write(uint8_t writeValue) {
       return WriteResult::READ_BUFFER_FULL;
     }
 
-    int readValue = buffer.read();
+    int readValue = busIO.read();
     if(readValue == writeValue) {
       if(readUnexpectedBytes) {
         return WriteResult::UNEXPECTED_EXTRA_BYTES;
@@ -90,10 +90,10 @@ bool RS485BusBase::isBufferFull() const {
 
 size_t RS485BusBase::fetch() {
   size_t bytesRead = 0;
-  while(!full && buffer.available() > 0) {
+  while(!full && busIO.available() > 0) {
     bytesRead++;
 
-    putByteInBuffer(buffer.read());
+    putByteInBuffer(busIO.read());
   }
 
   return bytesRead;

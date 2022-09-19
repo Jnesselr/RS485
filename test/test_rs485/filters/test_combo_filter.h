@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../assertable_buffer.hpp"
+#include "../../assertable_bus_io.hpp"
 #include "../../fixtures.h"
 
 #include <gtest/gtest.h>
@@ -16,7 +16,7 @@ protected:
     left(0),
     right(1),
     combo(&left, &right),
-    bus(buffer, readEnablePin, writeEnablePin) {}
+    bus(busIO, readEnablePin, writeEnablePin) {}
 
   void SetUp() {
     /**
@@ -28,7 +28,7 @@ protected:
      *     2    -     -
      *     3    +     -
      */
-    buffer << 0x01 << 0x02 << 0x02 << 0x01 << 0x03;
+    busIO << 0x01 << 0x02 << 0x02 << 0x01 << 0x03;
     bus.fetch();
 
     left.preValues.allow(0x01);
@@ -60,7 +60,7 @@ protected:
   FilterByValue left;
   FilterByValue right;
   ComboFilter combo;
-  AssertableBuffer buffer;
+  AssertableBusIO busIO;
   RS485Bus<8> bus;
 };
 
