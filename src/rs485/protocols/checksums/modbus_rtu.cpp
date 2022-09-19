@@ -1,10 +1,19 @@
 #include "rs485/protocols/checksums/modbus_rtu.h"
 
+/**
+ * The table below can be seen here: https://www.modbustools.com/modbus_crc16.html
+ * 
+ * The function is pretty close to the one used in the link above, with a correction that limits the table lookup.
+ * There's not a ton of explination as to how this table is generated. Essentially, there is a repeated step for
+ * every byte in a normal CRC-16 modbus calculation that can be done in advance and applied as a table lookup.
+ * 
+ * In practice, pretty much everyone copies this code from place to place instead of generating it themselves.
+ */
+
 void ModbusRTUChecksum::add(uint8_t data) {
   uint16_t temp = (data ^ checksum) & 0xff;
   checksum >>= 8;
   checksum ^= crcTable[temp];
-  checksum &= 0xffff;
 }
 
 const uint16_t ModbusRTUChecksum::crcTable[] = {
