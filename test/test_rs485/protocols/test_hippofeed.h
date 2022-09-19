@@ -26,8 +26,9 @@ TEST_F(HippoFeedProtocolTest, valid_checksum) {
   busIO.readable<6>({0x00, 0x02, 0x1B, 0x00, 0xAB, 0x14});
   bus.fetch();
 
-  size_t endIndex = bus.available() - 1;
-  ASSERT_EQ(PacketStatus::YES, protocol.isPacket(bus, 0, endIndex));
+  IsPacketResult result = protocol.isPacket(bus, 0, bus.available() - 1);
+  EXPECT_EQ(PacketStatus::YES, result.status);
+  EXPECT_EQ(6, result.packetLength);
 }
 
 // Check every checksum BUT our valid one
@@ -39,8 +40,9 @@ TEST_F(HippoFeedProtocolTest, invalid_checksum) {
     busIO << (uint8_t) (checksum & 0xff);
     bus.fetch();
 
-    size_t endIndex = bus.available() - 1;
-    ASSERT_EQ(PacketStatus::NO, protocol.isPacket(bus, 0, endIndex));
+    IsPacketResult result = protocol.isPacket(bus, 0, bus.available() - 1);
+    EXPECT_EQ(PacketStatus::NO, result.status);
+    EXPECT_EQ(0, result.packetLength);
     checksum++;
 
     if(checksum == 0xAB14) {  // Our valid checksum
@@ -54,16 +56,18 @@ TEST_F(HippoFeedProtocolTest, returns_not_enough_bytes_if_cannot_see_length) {
   busIO << 0x00;
   bus.fetch();
 
-  size_t endIndex = bus.available() - 1;
-  ASSERT_EQ(PacketStatus::NOT_ENOUGH_BYTES, protocol.isPacket(bus, 0, endIndex));
+  IsPacketResult result = protocol.isPacket(bus, 0, bus.available() - 1);
+  EXPECT_EQ(PacketStatus::NOT_ENOUGH_BYTES, result.status);
+  EXPECT_EQ(0, result.packetLength);
 }
 
 TEST_F(HippoFeedProtocolTest, returns_not_enough_bytes_if_does_not_have_length_plus_checksum_bytes) {
   busIO.readable<5>({0x00, 0x02, 0x1B, 0x00, 0xAB});  // Missing 0x14
   bus.fetch();
 
-  size_t endIndex = bus.available() - 1;
-  ASSERT_EQ(PacketStatus::NOT_ENOUGH_BYTES, protocol.isPacket(bus, 0, endIndex));
+  IsPacketResult result = protocol.isPacket(bus, 0, bus.available() - 1);
+  EXPECT_EQ(PacketStatus::NOT_ENOUGH_BYTES, result.status);
+  EXPECT_EQ(0, result.packetLength);
 }
 
 TEST_F(HippoFeedProtocolTest, returns_no_if_length_will_never_allow_for_packet_to_be_read) {
@@ -72,6 +76,7 @@ TEST_F(HippoFeedProtocolTest, returns_no_if_length_will_never_allow_for_packet_t
   busIO.readable<2>({0x00, 0x05});
   bus.fetch();
 
-  size_t endIndex = bus.available() - 1;
-  ASSERT_EQ(PacketStatus::NO, protocol.isPacket(bus, 0, endIndex));
+  IsPacketResult result = protocol.isPacket(bus, 0, bus.available() - 1);
+  EXPECT_EQ(PacketStatus::NO, result.status);
+  EXPECT_EQ(0, result.packetLength);
 }

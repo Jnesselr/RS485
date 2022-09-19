@@ -92,13 +92,13 @@ bool Packetizer::hasPacketInnerLoop() {
     }
 
     size_t endIndex = lastBusAvailable - 1;
-    PacketStatus status = protocol->isPacket(*bus, startIndex, endIndex);
+    IsPacketResult result = protocol->isPacket(*bus, startIndex, endIndex);
 
-    if(status == PacketStatus::NO) {
+    if(result.status == PacketStatus::NO) {
       rejectByte(startIndex);
     }
-    else if(status == PacketStatus::YES) {
-      packetSize = endIndex - startIndex + 1;
+    else if(result.status == PacketStatus::YES) {
+      packetSize = result.packetLength;
 
       // Clear out all bytes before startIndex
       while(startIndex > 0) {
@@ -125,7 +125,7 @@ bool Packetizer::hasPacketInnerLoop() {
 
       return true;
     }
-    else if(status == PacketStatus::NOT_ENOUGH_BYTES) {
+    else if(result.status == PacketStatus::NOT_ENOUGH_BYTES) {
       // Remove any "not enough bytes" byte at the start, only if the buffer is full
       if(startIndex == 0 && bus->isBufferFull()) {
         eatOneByte();
