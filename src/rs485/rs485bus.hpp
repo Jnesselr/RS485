@@ -5,7 +5,7 @@
 template<size_t BufferSize>
 class RS485Bus: public RS485BusBase {
 public:
-  RS485Bus(ReadWriteBuffer& buffer, uint8_t readEnablePin, uint8_t writeEnablePin);
+  RS485Bus(BusIO& buffer, uint8_t readEnablePin, uint8_t writeEnablePin);
 
   size_t bufferSize() const;
 
@@ -18,7 +18,7 @@ private:
 };
 
 template<size_t BufferSize>
-RS485Bus<BufferSize>::RS485Bus(ReadWriteBuffer& buffer, uint8_t readEnablePin, uint8_t writeEnablePin) :
+RS485Bus<BufferSize>::RS485Bus(BusIO& buffer, uint8_t readEnablePin, uint8_t writeEnablePin) :
   RS485BusBase(buffer, readEnablePin, writeEnablePin)
   {
     readBufferSize = BufferSize;

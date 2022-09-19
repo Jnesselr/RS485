@@ -1,6 +1,6 @@
 #include "rs485/rs485bus_base.h"
 
-RS485BusBase::RS485BusBase(ReadWriteBuffer& buffer, uint8_t readEnablePin, uint8_t writeEnablePin) :
+RS485BusBase::RS485BusBase(BusIO& buffer, uint8_t readEnablePin, uint8_t writeEnablePin) :
   buffer(buffer),
   readEnablePin(readEnablePin),
   writeEnablePin(writeEnablePin) {

@@ -2,7 +2,7 @@
 
 #include "Arduino.h"
 #include "util.h"
-#include "read_write_buffer.h"
+#include "bus_io.h"
 
 
 /*
@@ -13,7 +13,7 @@ Extra notes on WriteResult:
   then the bus essentially ate it which is less ideal.
 - READ_BUFFER_FULL: In the event we read back a value different from what we write, we put that value in an internal buffer
   for the caller to access later. It is the caller's responsibility to make sure this buffer is not full before they start
-  writing, as well as making sure the ReadWriteBuffer has no bytes available by calling fetch(). However, if the reader
+  writing, as well as making sure the BusIO has no bytes available by calling fetch(). However, if the reader
   keeps getting data available to it within the retries/timeout it will also fill up the buffer even if it was empty to start.
 */
 enum class WriteResult {
@@ -39,7 +39,7 @@ enum class WriteResult {
  */
 class RS485BusBase {
 public:
-  explicit RS485BusBase(ReadWriteBuffer& buffer, uint8_t readEnablePin, uint8_t writeEnablePin);
+  explicit RS485BusBase(BusIO& buffer, uint8_t readEnablePin, uint8_t writeEnablePin);
 
   virtual size_t bufferSize() const = 0;
 
@@ -74,7 +74,7 @@ protected:
 private:
   void putByteInBuffer(uint8_t value);
 
-  ReadWriteBuffer& buffer;
+  BusIO& buffer;
   uint8_t readEnablePin;
   uint8_t writeEnablePin;
 
