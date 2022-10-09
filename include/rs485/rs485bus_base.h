@@ -65,6 +65,11 @@ public:
   void setPreFetchDelay(ArduinoTime_t delay_ms);
   // How many times do we recheck for new bytes before giving up and not writing our byte.
   void setPreFetchRetries(size_t retryCount);
+  /*
+  How long to wait after enabling the write pin, after writing, and after disabling the write pin.
+  The same value is used for all 3. Setting this value too low prevents writes from being read back.
+  */
+  void setSettleTime(ArduinoTime_t settleTime_ms);
 
 protected:
   virtual void setByte(size_t bufferIndex, uint8_t value) = 0;
@@ -86,4 +91,5 @@ private:
   size_t readBackRetryCount = 0;
   ArduinoTime_t preFetchDelayMs = 0;
   size_t preFetchRetryCount = 0;
+  ArduinoTime_t settleTimeMs = 2;
 };

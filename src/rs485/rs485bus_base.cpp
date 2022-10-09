@@ -31,10 +31,13 @@ WriteResult RS485BusBase::write(uint8_t writeValue) {
   }
 
   digitalWrite(writeEnablePin, HIGH);
+  delay(settleTimeMs);
 
   busIO.write(writeValue);
+  delay(settleTimeMs);
 
   digitalWrite(writeEnablePin, LOW);
+  delay(settleTimeMs);
 
   bool readUnexpectedBytes = false;
 
@@ -142,4 +145,8 @@ void RS485BusBase::setPreFetchDelay(ArduinoTime_t delay_ms) {
 }
 void RS485BusBase::setPreFetchRetries(size_t retryCount) {
   this->preFetchRetryCount = retryCount;
+}
+
+void RS485BusBase::setSettleTime(ArduinoTime_t settleTime_ms) {
+  this->settleTimeMs = settleTime_ms;
 }
