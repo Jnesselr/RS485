@@ -1,7 +1,11 @@
 #pragma once
 
 #include "../bus_io.h"
+#ifdef UNIT_TEST
 #include <arduino/HardwareSerial.h>
+#else
+#include <HardwareSerial.h>
+#endif
 
 class HardwareSerialBusIO : public BusIO {
 public:

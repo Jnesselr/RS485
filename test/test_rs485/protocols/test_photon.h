@@ -6,11 +6,11 @@
 #include "../../assertable_bus_io.hpp"
 #include "rs485/rs485bus.hpp"
 
-#include "rs485/protocols/hippofeed.h"
+#include "rs485/protocols/photon.h"
 
-class HippoFeedProtocolTest : public PrepBus {
+class PhotonProtocolTest : public PrepBus {
 public:
-  HippoFeedProtocolTest(): PrepBus(),
+  PhotonProtocolTest(): PrepBus(),
     bus(busIO, readEnablePin, writeEnablePin) {}
 
   void SetUp() {
@@ -19,10 +19,10 @@ public:
 
   AssertableBusIO busIO;
   RS485Bus<8> bus;
-  HippoFeedProtocol protocol;
+  PhotonProtocol protocol;
 };
 
-TEST_F(HippoFeedProtocolTest, valid_checksum) {
+TEST_F(PhotonProtocolTest, valid_checksum) {
   busIO.readable<6>({0x00, 0x02, 0x1B, 0x00, 0xAB, 0x14});
   bus.fetch();
 
@@ -32,7 +32,7 @@ TEST_F(HippoFeedProtocolTest, valid_checksum) {
 }
 
 // Check every checksum BUT our valid one
-TEST_F(HippoFeedProtocolTest, invalid_checksum) {
+TEST_F(PhotonProtocolTest, invalid_checksum) {
   uint16_t checksum = 0;
   do {
     busIO.readable<4>({0x00, 0x02, 0x1B, 0x00});
@@ -52,7 +52,7 @@ TEST_F(HippoFeedProtocolTest, invalid_checksum) {
   } while(checksum != 0);
 }
 
-TEST_F(HippoFeedProtocolTest, returns_not_enough_bytes_if_cannot_see_length) {
+TEST_F(PhotonProtocolTest, returns_not_enough_bytes_if_cannot_see_length) {
   busIO << 0x00;
   bus.fetch();
 
@@ -61,7 +61,7 @@ TEST_F(HippoFeedProtocolTest, returns_not_enough_bytes_if_cannot_see_length) {
   EXPECT_EQ(0, result.packetLength);
 }
 
-TEST_F(HippoFeedProtocolTest, returns_not_enough_bytes_if_does_not_have_length_plus_checksum_bytes) {
+TEST_F(PhotonProtocolTest, returns_not_enough_bytes_if_does_not_have_length_plus_checksum_bytes) {
   busIO.readable<5>({0x00, 0x02, 0x1B, 0x00, 0xAB});  // Missing 0x14
   bus.fetch();
 
@@ -70,7 +70,7 @@ TEST_F(HippoFeedProtocolTest, returns_not_enough_bytes_if_does_not_have_length_p
   EXPECT_EQ(0, result.packetLength);
 }
 
-TEST_F(HippoFeedProtocolTest, returns_no_if_length_will_never_allow_for_packet_to_be_read) {
+TEST_F(PhotonProtocolTest, returns_no_if_length_will_never_allow_for_packet_to_be_read) {
   // Buffer size is 8. Address and length take up 1 byte. Checksum takes up 2.
   // Max data size is 4 bytes, meaning 5 is beyond what we can check.
   busIO.readable<2>({0x00, 0x05});

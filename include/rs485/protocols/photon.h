@@ -9,7 +9,7 @@
  * 
  * Packet format: <address:1> <length:1> <data:N> <checksum:2>
  */
-class HippoFeedProtocol : public Protocol {
+class PhotonProtocol : public Protocol {
 public:
   virtual IsPacketResult isPacket(const RS485BusBase& bus, size_t startIndex, size_t endIndex) const;
 };

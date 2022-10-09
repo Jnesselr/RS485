@@ -1,8 +1,7 @@
-#include "rs485/protocols/hippofeed.h"
+#include "rs485/protocols/photon.h"
 #include "rs485/protocols/checksums/modbus_rtu.h"
-#include <gtest/gtest.h>
 
-IsPacketResult HippoFeedProtocol::isPacket(const RS485BusBase& bus, size_t startIndex, size_t endIndex) const {
+IsPacketResult PhotonProtocol::isPacket(const RS485BusBase& bus, size_t startIndex, size_t endIndex) const {
   if(startIndex == endIndex) return {PacketStatus::NOT_ENOUGH_BYTES, 0};  // Cannot see the length byte
 
   uint8_t lengthByte = bus[startIndex + 1];

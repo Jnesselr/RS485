@@ -15,7 +15,7 @@
 #include "filters/test_combo_filter.h"
 
 // // Protocols
-#include "protocols/test_hippofeed.h"
+#include "protocols/test_photon.h"
 
 #if defined(ARDUINO)
 #include <Arduino.h>

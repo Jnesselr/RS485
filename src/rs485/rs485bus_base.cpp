@@ -41,7 +41,7 @@ WriteResult RS485BusBase::write(uint8_t writeValue) {
   while(true) {
     bool bytesAvailable = (busIO.available() > 0);
     if(! bytesAvailable) {
-      for(int i=0; i < readBackRetryCount; i++) {
+      for(size_t i=0; i < readBackRetryCount; i++) {
         delay(readBackRetryMs);
 
         bytesAvailable |= (busIO.available() > 0);

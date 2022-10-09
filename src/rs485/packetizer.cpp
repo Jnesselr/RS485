@@ -41,7 +41,7 @@ bool Packetizer::hasPacket() {
   ArduinoTime_t startTimeMs = millis();
 
   while(true) {
-    size_t bytesFetched = fetchFromBus();
+    fetchFromBus();
 
     if(lastBusAvailable == bus->available()) {
       return false; // No new bytes are available, so no new packet is available
