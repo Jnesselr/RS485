@@ -1,6 +1,6 @@
 {
   "name": "RS485",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A library for controlling RS485 devices",
   "keywords": "rs485, serial",
   "repository":
