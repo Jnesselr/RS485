@@ -1,7 +1,6 @@
 #include "rs485/protocols/checksums/crc8_107.h"
 
 #include <cstddef>
-#include <iostream>
 
 void CRC8_107::add(uint8_t data) {
   crc ^= (data << 8);
