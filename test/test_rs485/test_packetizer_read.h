@@ -18,12 +18,16 @@ protected:
     protocolSpy(protocol) {};
 
   void SetUp() {
-    When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
+    When(Method(ArduinoFake(), millis)).AlwaysDo([&]()->unsigned long{
+      currentMillis++;
+      return currentMillis;
+    });
     Spy(Method(protocolSpy, isPacket));
 
     ArduinoFake().ClearInvocationHistory();
   };
 
+  volatile unsigned long currentMillis = 0;
   AssertableBusIO busIO;
   ProtocolMatchingBytes protocol;
   Mock<ProtocolMatchingBytes> protocolSpy;
@@ -33,7 +37,9 @@ class PacketizerReadBusTest : public PacketizerReadTest {
 protected:
   PacketizerReadBusTest(): PacketizerReadTest(),
     bus(busIO, readEnablePin, writeEnablePin),
-    packetizer(bus, protocol) {}
+    packetizer(bus, protocol) {
+      packetizer.setMaxReadTimeout(20);
+    }
 
   RS485Bus<8> bus;
   Packetizer packetizer;
@@ -43,7 +49,9 @@ class PacketizerReadBus3Test : public PacketizerReadTest {
 protected:
   PacketizerReadBus3Test(): PacketizerReadTest(),
     bus(busIO, readEnablePin, writeEnablePin),
-    packetizer(bus, protocol) {}
+    packetizer(bus, protocol) {
+      packetizer.setMaxReadTimeout(20);
+    }
 
   RS485Bus<3> bus;
   Packetizer packetizer;
@@ -53,7 +61,9 @@ class PacketizerReadBusBigTest : public PacketizerReadTest {
 protected:
   PacketizerReadBusBigTest(): PacketizerReadTest(),
     bus(busIO, readEnablePin, writeEnablePin),
-    packetizer(bus, protocol) {}
+    packetizer(bus, protocol) {
+      packetizer.setMaxReadTimeout(20);
+    }
 
   constexpr static size_t u64Size = sizeof(uint64_t) * 8;  // Needs to match the date type used for recheckBitmap in Packetizer
   constexpr static size_t bufferSize = u64Size + 20;  // uint64_t size + 20 should be good enough for all the tests
@@ -125,9 +135,8 @@ TEST_F(PacketizerReadBus3Test, not_enough_bytes_get_skipped_if_buffer_is_full) {
 }
 
 /**
- * This test is pretty gnarly. There's a couple of reasons for that. The first is the "hack" below to workaround verifying captured values.
- * The second has to do with the flow for the packetizer. This more closely resembles what actual usage would look like and it found some
- * issues that splitting up the test cases did not.
+ * This test is pretty gnarly. The main reason has to do with the flow for the packetizer and how we verify isPacket being called.
+ * This also more closely resembles what actual usage would look like and it found some issues that splitting up the test cases did not.
  *
  * Because it's long and hard to read, the verification sections are broken up by comments that start with "--".
  */
@@ -285,7 +294,7 @@ TEST_F(PacketizerReadBus3Test, can_get_packet_even_if_it_is_past_bus_size_if_byt
   EXPECT_EQ(0, bus.available());
   EXPECT_EQ(0, packetizer.packetLength());
 
-  EXPECT_TRUE(packetizer.hasPacket());
+  ASSERT_TRUE(packetizer.hasPacket());
   EXPECT_EQ(2, packetizer.packetLength());
 
   EXPECT_EQ(2, bus.available());
@@ -294,7 +303,7 @@ TEST_F(PacketizerReadBus3Test, can_get_packet_even_if_it_is_past_bus_size_if_byt
   EXPECT_EQ(-1, bus[2]);
 
   packetizer.clearPacket();
-  EXPECT_FALSE(packetizer.hasPacket());
+  ASSERT_FALSE(packetizer.hasPacket());
   EXPECT_EQ(0, packetizer.packetLength());
   EXPECT_EQ(0, bus.available());
   EXPECT_EQ(-1, bus[0]);

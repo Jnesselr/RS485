@@ -43,20 +43,20 @@ bool Packetizer::hasPacket() {
   while(true) {
     fetchFromBus();
 
-    if(lastBusAvailable == bus->available()) {
-      return false; // No new bytes are available, so no new packet is available
-    }
+    size_t currentBusAvailable = bus->available();
 
-    lastBusAvailable = bus->available();
+    if(lastBusAvailable != currentBusAvailable) {
+      lastBusAvailable = currentBusAvailable;
 
-    bool packetFound = hasPacketInnerLoop();
-    if(packetFound) {
-      return true;
+      bool packetFound = hasPacketInnerLoop();
+      if(packetFound) {
+        return true;
+      }
     }
 
     ArduinoTime_t currentTimeMs = millis();
     
-    if(currentTimeMs - startTimeMs >= maxReadTimeoutMs) {
+    if((currentTimeMs - startTimeMs) >= maxReadTimeoutMs) {
       return false;  // We timed out trying to read a valid packet
     }
   }
