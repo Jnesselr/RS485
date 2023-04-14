@@ -18,7 +18,8 @@ protected:
 
   void SetUp() {
     When(Method(ArduinoFake(), delay)).AlwaysReturn();
-    When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
+    When(Method(ArduinoFake(), delayMicroseconds)).AlwaysReturn();
+    When(Method(ArduinoFake(), micros)).AlwaysReturn(0);
     When(Method(fakeBus, enableWrite)).AlwaysReturn();
     When(Method(fakeBus, bufferSize)).AlwaysReturn(8);
     packetizer.setMaxWriteTimeout(0);
@@ -277,9 +278,9 @@ TEST_F(PacketizerWriteTest, no_write_new_bytes_in_middle_of_message) {
 }
 
 TEST_F(PacketizerWriteTest, write_packet_delays_to_ensure_quiet_time) {
-  packetizer.setMaxWriteTimeout(100);
+  packetizer.setMaxWriteTimeout(101);
   packetizer.setBusQuietTime(100);
-  When(Method(ArduinoFake(), millis)).AlwaysReturn(15);
+  When(Method(ArduinoFake(), micros)).AlwaysReturn(15);
   When(Method(fakeBus, fetch)).AlwaysReturn(0);
 
   When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
@@ -288,8 +289,8 @@ TEST_F(PacketizerWriteTest, write_packet_delays_to_ensure_quiet_time) {
   EXPECT_EQ(PacketWriteResult::OK, status);
 
   Verify(
-    Method(ArduinoFake(), millis),
-    Method(ArduinoFake(), delay).Using(85),  // quiet time is 100 ms - 15 ms that millis() returns
+    Method(ArduinoFake(), micros),
+    Method(ArduinoFake(), delayMicroseconds).Using(85),  // quiet time is 100 ms - 15 ms that micros() returns
     Method(fakeBus, fetch),
     Method(fakeBus, enableWrite).Using(true),
     Method(fakeBus, write).Using(0x12),
@@ -309,10 +310,10 @@ TEST_F(PacketizerWriteTest, write_packet_delays_to_ensure_quiet_time_in_noisy_en
   packetizer.setMaxWriteTimeout(1000);
   packetizer.setBusQuietTime(100);
 
-  // These two have to work together. millis then fetch then millis again to update last read time.
+  // These two have to work together. micros then fetch then micros again to update last read time.
   // However, since we already know we've hit bytes in this function, we don't ask the current time
   // again, only delay until our next fetch.
-  When(Method(ArduinoFake(), millis)).Return(15, 125, 230, 332);
+  When(Method(ArduinoFake(), micros)).Return(15, 125, 230, 332);
   When(Method(fakeBus, fetch)).Return(1, 1, 1, 0);
 
   When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
@@ -321,17 +322,17 @@ TEST_F(PacketizerWriteTest, write_packet_delays_to_ensure_quiet_time_in_noisy_en
   EXPECT_EQ(PacketWriteResult::OK, status);
 
   Verify(
-    Method(ArduinoFake(), millis),  // Returns 15
-    Method(ArduinoFake(), delay).Using(85),  // quiet time is 100 ms - 15 ms that millis() returns
+    Method(ArduinoFake(), micros),  // Returns 15
+    Method(ArduinoFake(), delayMicroseconds).Using(85),  // quiet time is 100 ms - 15 ms that micros() returns
     Method(fakeBus, fetch),  // Returns 1
-    Method(ArduinoFake(), millis),  // Returns 125
-    Method(ArduinoFake(), delay).Using(100),  // Just assume we're delaying the full 100.
+    Method(ArduinoFake(), micros),  // Returns 125
+    Method(ArduinoFake(), delayMicroseconds).Using(100),  // Just assume we're delaying the full 100.
     Method(fakeBus, fetch),  // Returns 1
-    Method(ArduinoFake(), millis),  // Returns 230
-    Method(ArduinoFake(), delay).Using(100),  // Just assume we're delaying the full 100.
+    Method(ArduinoFake(), micros),  // Returns 230
+    Method(ArduinoFake(), delayMicroseconds).Using(100),  // Just assume we're delaying the full 100.
     Method(fakeBus, fetch),  // Returns 1
-    Method(ArduinoFake(), millis),  // Returns 332
-    Method(ArduinoFake(), delay).Using(100),  // Just assume we're delaying the full 100.
+    Method(ArduinoFake(), micros),  // Returns 332
+    Method(ArduinoFake(), delayMicroseconds).Using(100),  // Just assume we're delaying the full 100.
     Method(fakeBus, fetch),  // Returns 0, last byte read time isn't updated
     Method(fakeBus, enableWrite).Using(true),
     Method(fakeBus, write).Using(0x12),
@@ -351,7 +352,7 @@ TEST_F(PacketizerWriteTest, write_packet_delays_until_timeout) {
   packetizer.setMaxWriteTimeout(300);
   packetizer.setBusQuietTime(100);
 
-  When(Method(ArduinoFake(), millis)).Return(0, 100, 200, 300);
+  When(Method(ArduinoFake(), micros)).Return(0, 100, 200, 300);
   When(Method(fakeBus, fetch)).AlwaysReturn(1);
 
   When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
@@ -360,16 +361,16 @@ TEST_F(PacketizerWriteTest, write_packet_delays_until_timeout) {
   EXPECT_EQ(PacketWriteResult::FAILED_TIMEOUT, status);
 
   Verify(
-    Method(ArduinoFake(), millis),  // Returns 0
-    Method(ArduinoFake(), delay).Using(100),
+    Method(ArduinoFake(), micros),  // Returns 0
+    Method(ArduinoFake(), delayMicroseconds).Using(100),
     Method(fakeBus, fetch),
-    Method(ArduinoFake(), millis),  // Returns 100
-    Method(ArduinoFake(), delay).Using(100),
+    Method(ArduinoFake(), micros),  // Returns 100
+    Method(ArduinoFake(), delayMicroseconds).Using(100),
     Method(fakeBus, fetch),
-    Method(ArduinoFake(), millis),  // Returns 200
-    Method(ArduinoFake(), delay).Using(100),
+    Method(ArduinoFake(), micros),  // Returns 200
+    Method(ArduinoFake(), delayMicroseconds).Using(100),
     Method(fakeBus, fetch),
-    Method(ArduinoFake(), millis)  // Returns 300
+    Method(ArduinoFake(), micros)  // Returns 300
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, enableWrite));
@@ -383,7 +384,7 @@ TEST_F(PacketizerWriteTest, read_affects_last_read_byte_time) {
   When(Method(fakeBus, fetch)).Return(1_Time((size_t) 1), 100_Times((size_t) 0)); // Our first fetch during read has to have data to force a delay on write
   When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
 
-  When(Method(ArduinoFake(), millis)).Return(
+  When(Method(ArduinoFake(), micros)).Return(
     0,    // Read start time
     15,   // Read time of fetch
     30,   // Read time end of hasPacket, to check, against timeout, since no byte was found
@@ -398,12 +399,12 @@ TEST_F(PacketizerWriteTest, read_affects_last_read_byte_time) {
   EXPECT_EQ(PacketWriteResult::OK, status);
 
   Verify(
-    Method(ArduinoFake(), millis),  // Returns 0
+    Method(ArduinoFake(), micros),  // Returns 0
     Method(fakeBus, fetch),         // Returns 1
-    Method(ArduinoFake(), millis),  // Returns 15
-    Method(ArduinoFake(), millis),  // Returns 30
-    Method(ArduinoFake(), millis),  // Returns 45
-    Method(ArduinoFake(), delay).Using(70),
+    Method(ArduinoFake(), micros),  // Returns 15
+    Method(ArduinoFake(), micros),  // Returns 30
+    Method(ArduinoFake(), micros),  // Returns 45
+    Method(ArduinoFake(), delayMicroseconds).Using(70),
     Method(fakeBus, fetch),         // Returns 0
     Method(fakeBus, enableWrite).Using(true),
     Method(fakeBus, write).Using(0x12),

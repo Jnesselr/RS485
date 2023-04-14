@@ -18,16 +18,16 @@ protected:
     protocolSpy(protocol) {};
 
   void SetUp() {
-    When(Method(ArduinoFake(), millis)).AlwaysDo([&]()->unsigned long{
-      currentMillis++;
-      return currentMillis;
+    When(Method(ArduinoFake(), micros)).AlwaysDo([&]()->unsigned long{
+      currentMicros++;
+      return currentMicros;
     });
     Spy(Method(protocolSpy, isPacket));
 
     ArduinoFake().ClearInvocationHistory();
   };
 
-  volatile unsigned long currentMillis = 0;
+  volatile unsigned long currentMicros = 0;
   AssertableBusIO busIO;
   ProtocolMatchingBytes protocol;
   Mock<ProtocolMatchingBytes> protocolSpy;
@@ -318,7 +318,7 @@ TEST_F(PacketizerReadBus3Test, cannot_get_packet_if_timeout_is_reached) {
   packetizer.setMaxReadTimeout(200);
 
   busIO << 0x01 << 0x02 << 0x03 << 0x04 << 0x06 << 0x06;
-  When(Method(ArduinoFake(), millis)).Return(
+  When(Method(ArduinoFake(), micros)).Return(
     0,    // Start time ms
     10,   // fetch from bus time
     100,  // Timeout check

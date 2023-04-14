@@ -22,7 +22,7 @@ public:
     bus8.setSettleTime(settleTime);
   };
 
-  const TimeMilliseconds_t settleTime = 9;
+  const TimeMicroseconds_t settleTime = 9;
   AssertableBusIO busIO;
   Mock<AssertableBusIO> spy = busIO.spy();
 

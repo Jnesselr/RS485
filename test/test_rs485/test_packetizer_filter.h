@@ -27,15 +27,14 @@ protected:
 
   void SetUp() {
     PrepBus::SetUp();
-
-    When(Method(ArduinoFake(), millis)).AlwaysDo([&]()->unsigned long{
-      currentMillis++;
-      return currentMillis;
+    When(Method(ArduinoFake(), micros)).AlwaysDo([&]()->unsigned long{
+      currentMicros++;
+      return currentMicros;
     });
     packetizer.setMaxReadTimeout(20);
   }
 
-  volatile unsigned long currentMillis = 0;
+  volatile unsigned long currentMicros = 0;
   AssertableBusIO busIO;
   RS485Bus<8> bus;
   ProtocolMatchingBytes protocol;

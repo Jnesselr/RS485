@@ -38,7 +38,7 @@ bool Packetizer::hasPacket() {
     return true;  // We have a packet already, no need to do any searching
   }
 
-  TimeMilliseconds_t startTimeMs = millis();
+  TimeMicroseconds_t startTime = micros();
 
   while(true) {
     fetchFromBus();
@@ -54,9 +54,9 @@ bool Packetizer::hasPacket() {
       }
     }
 
-    TimeMilliseconds_t currentTimeMs = millis();
+    TimeMicroseconds_t currentTimeMs = micros();
     
-    if((currentTimeMs - startTimeMs) >= maxReadTimeoutMs) {
+    if((currentTimeMs - startTime) >= maxReadTimeout) {
       return false;  // We timed out trying to read a valid packet
     }
   }
@@ -154,27 +154,27 @@ void Packetizer::clearPacket() {
   lastBusAvailable = 0;
 }
 
-void Packetizer::setMaxReadTimeout(TimeMilliseconds_t maxReadTimeoutMs) {
-  this->maxReadTimeoutMs = maxReadTimeoutMs;
+void Packetizer::setMaxReadTimeout(TimeMicroseconds_t maxReadTimeout) {
+  this->maxReadTimeout = maxReadTimeout;
 }
 
 PacketWriteResult Packetizer::writePacket(const uint8_t* buffer, size_t bufferSize) {
-  TimeMilliseconds_t startTimeMs = millis();
-  if(startTimeMs - lastByteReadTimeMs < busQuietTimeMs) {
-    TimeMilliseconds_t delayTime = busQuietTimeMs - (startTimeMs - lastByteReadTimeMs);
+  TimeMicroseconds_t startTime = micros();
+  if((startTime - lastByteReadTimestamp) < busQuietTime) {
+    TimeMicroseconds_t delayTime = busQuietTime - (startTime - lastByteReadTimestamp);
 
     while(true) {
-      delay(delayTime);
+      delayMicroseconds(delayTime);
       size_t bytesFetched = fetchFromBus();
       if(bytesFetched == 0) {
         break;
       }
 
-      if(lastByteReadTimeMs >= startTimeMs + maxWriteTimeoutMs) {
+      if(lastByteReadTimestamp >= startTime + maxWriteTimeout) {
         return PacketWriteResult::FAILED_TIMEOUT;
       }
 
-      delayTime = busQuietTimeMs;
+      delayTime = busQuietTime;
     }
   }
 
@@ -203,18 +203,18 @@ PacketWriteResult Packetizer::writePacket(const uint8_t* buffer, size_t bufferSi
   return PacketWriteResult::OK;
 }
 
-void Packetizer::setMaxWriteTimeout(TimeMilliseconds_t maxWriteTimeoutMs) {
-  this->maxWriteTimeoutMs = maxWriteTimeoutMs;
+void Packetizer::setMaxWriteTimeout(TimeMicroseconds_t maxWriteTimeout) {
+  this->maxWriteTimeout = maxWriteTimeout;
 }
 
-void Packetizer::setBusQuietTime(TimeMilliseconds_t busQuietTimeMs) {
-  this->busQuietTimeMs = busQuietTimeMs;
+void Packetizer::setBusQuietTime(TimeMicroseconds_t busQuietTime) {
+  this->busQuietTime = busQuietTime;
 }
 
 size_t Packetizer::fetchFromBus() {
   int16_t result = bus->fetch();
   if(result > 0) {
-    lastByteReadTimeMs = millis();
+    lastByteReadTimestamp = micros();
   }
   return result;
 }
