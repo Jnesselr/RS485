@@ -71,7 +71,7 @@ public:
   */
   void setSettleTime(ArduinoTime_t settleTime_ms);
 
-  void enableWrite(bool writeEnabled);
+  VIRTUAL_FOR_UNIT_TEST void enableWrite(bool writeEnabled);
 
 protected:
   virtual void setByte(size_t bufferIndex, uint8_t value) = 0;
@@ -96,4 +96,16 @@ private:
   ArduinoTime_t settleTimeMs = 2;
 
   bool writeCurrentlyEnabled = false;
+};
+
+/*
+ * When using the bus to send multiple bytes in a row, you can create an object of this type. It enables bus writing on creation
+ * and disables it on destruction.
+*/
+class RS485WriteEnable {
+public:
+  RS485WriteEnable(RS485BusBase* bus);
+  ~RS485WriteEnable();
+private:
+  RS485BusBase* bus;
 };

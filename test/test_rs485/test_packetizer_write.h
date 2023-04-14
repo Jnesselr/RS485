@@ -19,6 +19,7 @@ protected:
   void SetUp() {
     When(Method(ArduinoFake(), delay)).AlwaysReturn();
     When(Method(ArduinoFake(), millis)).AlwaysReturn(0);
+    When(Method(fakeBus, enableWrite)).AlwaysReturn();
     When(Method(fakeBus, bufferSize)).AlwaysReturn(8);
     packetizer.setMaxWriteTimeout(0);
 
@@ -45,13 +46,15 @@ TEST_F(PacketizerWriteTest, write_package_with_no_interruptions) {
   EXPECT_EQ(PacketWriteResult::OK, status);
 
   Verify(
+    Method(fakeBus, enableWrite).Using(true),
     Method(fakeBus, write).Using(0x12),
     Method(fakeBus, write).Using(0x34),
     Method(fakeBus, write).Using(0x56),
     Method(fakeBus, write).Using(0x78),
     Method(fakeBus, write).Using(0x9A),
     Method(fakeBus, write).Using(0xBC),
-    Method(fakeBus, write).Using(0xDE)
+    Method(fakeBus, write).Using(0xDE),
+    Method(fakeBus, enableWrite).Using(false)
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, write));
@@ -65,13 +68,15 @@ TEST_F(PacketizerWriteTest, unexpected_extra_bytes_at_beginning_of_message) {
   EXPECT_EQ(PacketWriteResult::OK, status);
 
   Verify(
+    Method(fakeBus, enableWrite).Using(true),
     Method(fakeBus, write).Using(0x12),
     Method(fakeBus, write).Using(0x34),
     Method(fakeBus, write).Using(0x56),
     Method(fakeBus, write).Using(0x78),
     Method(fakeBus, write).Using(0x9A),
     Method(fakeBus, write).Using(0xBC),
-    Method(fakeBus, write).Using(0xDE)
+    Method(fakeBus, write).Using(0xDE),
+    Method(fakeBus, enableWrite).Using(false)
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, write));
@@ -85,10 +90,12 @@ TEST_F(PacketizerWriteTest, unexpected_extra_bytes_in_middle_of_message) {
   EXPECT_EQ(PacketWriteResult::FAILED_INTERRUPTED, status);
 
   Verify(
+    Method(fakeBus, enableWrite).Using(true),
     Method(fakeBus, write).Using(0x12),
     Method(fakeBus, write).Using(0x34),
     Method(fakeBus, write).Using(0x56),
-    Method(fakeBus, write).Using(0x78)
+    Method(fakeBus, write).Using(0x78),
+    Method(fakeBus, enableWrite).Using(false)
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, write));
@@ -102,7 +109,9 @@ TEST_F(PacketizerWriteTest, read_buffer_full_at_beginning_of_message) {
   EXPECT_EQ(PacketWriteResult::FAILED_BUFFER_FULL, status);
 
   Verify(
-    Method(fakeBus, write).Using(0x12)
+    Method(fakeBus, enableWrite).Using(true),
+    Method(fakeBus, write).Using(0x12),
+    Method(fakeBus, enableWrite).Using(false)
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, write));
@@ -116,10 +125,12 @@ TEST_F(PacketizerWriteTest, read_buffer_full_in_middle_of_message) {
   EXPECT_EQ(PacketWriteResult::FAILED_BUFFER_FULL, status);
 
   Verify(
+    Method(fakeBus, enableWrite).Using(true),
     Method(fakeBus, write).Using(0x12),
     Method(fakeBus, write).Using(0x34),
     Method(fakeBus, write).Using(0x56),
-    Method(fakeBus, write).Using(0x78)
+    Method(fakeBus, write).Using(0x78),
+    Method(fakeBus, enableWrite).Using(false)
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, write));
@@ -133,7 +144,9 @@ TEST_F(PacketizerWriteTest, no_write_buffer_full_at_beginning_of_message) {
   EXPECT_EQ(PacketWriteResult::FAILED_BUFFER_FULL, status);
 
   Verify(
-    Method(fakeBus, write).Using(0x12)
+    Method(fakeBus, enableWrite).Using(true),
+    Method(fakeBus, write).Using(0x12),
+    Method(fakeBus, enableWrite).Using(false)
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, write));
@@ -147,10 +160,12 @@ TEST_F(PacketizerWriteTest, no_write_buffer_full_in_middle_of_message) {
   EXPECT_EQ(PacketWriteResult::FAILED_BUFFER_FULL, status);
 
   Verify(
+    Method(fakeBus, enableWrite).Using(true),
     Method(fakeBus, write).Using(0x12),
     Method(fakeBus, write).Using(0x34),
     Method(fakeBus, write).Using(0x56),
-    Method(fakeBus, write).Using(0x78)
+    Method(fakeBus, write).Using(0x78),
+    Method(fakeBus, enableWrite).Using(false)
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, write));
@@ -164,7 +179,9 @@ TEST_F(PacketizerWriteTest, no_read_timeout_at_beginning_of_message) {
   EXPECT_EQ(PacketWriteResult::FAILED_INTERRUPTED, status);
 
   Verify(
-    Method(fakeBus, write).Using(0x12)
+    Method(fakeBus, enableWrite).Using(true),
+    Method(fakeBus, write).Using(0x12),
+    Method(fakeBus, enableWrite).Using(false)
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, write));
@@ -178,10 +195,12 @@ TEST_F(PacketizerWriteTest, no_read_timeout_in_middle_of_message) {
   EXPECT_EQ(PacketWriteResult::FAILED_INTERRUPTED, status);
 
   Verify(
+    Method(fakeBus, enableWrite).Using(true),
     Method(fakeBus, write).Using(0x12),
     Method(fakeBus, write).Using(0x34),
     Method(fakeBus, write).Using(0x56),
-    Method(fakeBus, write).Using(0x78)
+    Method(fakeBus, write).Using(0x78),
+    Method(fakeBus, enableWrite).Using(false)
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, write));
@@ -195,7 +214,9 @@ TEST_F(PacketizerWriteTest, failed_read_back_at_beginning_of_message) {
   EXPECT_EQ(PacketWriteResult::FAILED_INTERRUPTED, status);
 
   Verify(
-    Method(fakeBus, write).Using(0x12)
+    Method(fakeBus, enableWrite).Using(true),
+    Method(fakeBus, write).Using(0x12),
+    Method(fakeBus, enableWrite).Using(false)
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, write));
@@ -209,10 +230,12 @@ TEST_F(PacketizerWriteTest, failed_read_back_in_middle_of_message) {
   EXPECT_EQ(PacketWriteResult::FAILED_INTERRUPTED, status);
 
   Verify(
+    Method(fakeBus, enableWrite).Using(true),
     Method(fakeBus, write).Using(0x12),
     Method(fakeBus, write).Using(0x34),
     Method(fakeBus, write).Using(0x56),
-    Method(fakeBus, write).Using(0x78)
+    Method(fakeBus, write).Using(0x78),
+    Method(fakeBus, enableWrite).Using(false)
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, write));
@@ -226,7 +249,9 @@ TEST_F(PacketizerWriteTest, no_write_new_bytes_at_beginning_of_message) {
   EXPECT_EQ(PacketWriteResult::FAILED_INTERRUPTED, status);
 
   Verify(
-    Method(fakeBus, write).Using(0x12)
+    Method(fakeBus, enableWrite).Using(true),
+    Method(fakeBus, write).Using(0x12),
+    Method(fakeBus, enableWrite).Using(false)
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, write));
@@ -240,10 +265,12 @@ TEST_F(PacketizerWriteTest, no_write_new_bytes_in_middle_of_message) {
   EXPECT_EQ(PacketWriteResult::FAILED_INTERRUPTED, status);
 
   Verify(
+    Method(fakeBus, enableWrite).Using(true),
     Method(fakeBus, write).Using(0x12),
     Method(fakeBus, write).Using(0x34),
     Method(fakeBus, write).Using(0x56),
-    Method(fakeBus, write).Using(0x78)
+    Method(fakeBus, write).Using(0x78),
+    Method(fakeBus, enableWrite).Using(false)
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, write));
@@ -264,13 +291,15 @@ TEST_F(PacketizerWriteTest, write_package_delays_to_ensure_quiet_time) {
     Method(ArduinoFake(), millis),
     Method(ArduinoFake(), delay).Using(85),  // quiet time is 100 ms - 15 ms that millis() returns
     Method(fakeBus, fetch),
+    Method(fakeBus, enableWrite).Using(true),
     Method(fakeBus, write).Using(0x12),
     Method(fakeBus, write).Using(0x34),
     Method(fakeBus, write).Using(0x56),
     Method(fakeBus, write).Using(0x78),
     Method(fakeBus, write).Using(0x9A),
     Method(fakeBus, write).Using(0xBC),
-    Method(fakeBus, write).Using(0xDE)
+    Method(fakeBus, write).Using(0xDE),
+    Method(fakeBus, enableWrite).Using(false)
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, write));
@@ -304,13 +333,15 @@ TEST_F(PacketizerWriteTest, write_package_delays_to_ensure_quiet_time_in_noisy_e
     Method(ArduinoFake(), millis),  // Returns 332
     Method(ArduinoFake(), delay).Using(100),  // Just assume we're delaying the full 100.
     Method(fakeBus, fetch),  // Returns 0, last byte read time isn't updated
+    Method(fakeBus, enableWrite).Using(true),
     Method(fakeBus, write).Using(0x12),
     Method(fakeBus, write).Using(0x34),
     Method(fakeBus, write).Using(0x56),
     Method(fakeBus, write).Using(0x78),
     Method(fakeBus, write).Using(0x9A),
     Method(fakeBus, write).Using(0xBC),
-    Method(fakeBus, write).Using(0xDE)
+    Method(fakeBus, write).Using(0xDE),
+    Method(fakeBus, enableWrite).Using(false)
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, write));
@@ -341,6 +372,7 @@ TEST_F(PacketizerWriteTest, write_package_delays_until_timeout) {
     Method(ArduinoFake(), millis)  // Returns 300
   ).Once();
 
+  VerifyNoOtherInvocations(Method(fakeBus, enableWrite));
   VerifyNoOtherInvocations(Method(fakeBus, write));
 }
 
@@ -373,13 +405,15 @@ TEST_F(PacketizerWriteTest, read_affects_last_read_byte_time) {
     Method(ArduinoFake(), millis),  // Returns 45
     Method(ArduinoFake(), delay).Using(70),
     Method(fakeBus, fetch),         // Returns 0
+    Method(fakeBus, enableWrite).Using(true),
     Method(fakeBus, write).Using(0x12),
     Method(fakeBus, write).Using(0x34),
     Method(fakeBus, write).Using(0x56),
     Method(fakeBus, write).Using(0x78),
     Method(fakeBus, write).Using(0x9A),
     Method(fakeBus, write).Using(0xBC),
-    Method(fakeBus, write).Using(0xDE)
+    Method(fakeBus, write).Using(0xDE),
+    Method(fakeBus, enableWrite).Using(false)
   ).Once();
 
   VerifyNoOtherInvocations(Method(fakeBus, write));

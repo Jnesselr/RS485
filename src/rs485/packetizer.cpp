@@ -178,6 +178,8 @@ PacketWriteResult Packetizer::writePacket(const uint8_t* buffer, size_t bufferSi
     }
   }
 
+  RS485WriteEnable writeEnable(bus); // RAII to enable/disable bus writing
+
   for(size_t i = 0; i < bufferSize; i++) {
     WriteResult status = bus->write(buffer[i]);
     switch(status) {

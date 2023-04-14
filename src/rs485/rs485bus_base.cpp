@@ -49,6 +49,7 @@ WriteResult RS485BusBase::write(uint8_t writeValue) {
     bool bytesAvailable = (busIO.available() > 0);
     if(! bytesAvailable) {
       for(size_t i=0; i < readBackRetryCount; i++) {
+        // delayMicroseconds(100);
         delay(readBackRetryMs);
 
         bytesAvailable |= (busIO.available() > 0);
@@ -171,4 +172,12 @@ void RS485BusBase::enableWrite(bool writeEnabled) {
     // delayMicroseconds(10);
     delay(settleTimeMs);
   }
+}
+
+RS485WriteEnable::RS485WriteEnable(RS485BusBase* bus): bus(bus) {
+  bus->enableWrite(true);
+}
+
+RS485WriteEnable::~RS485WriteEnable() {
+  bus->enableWrite(false);
 }
