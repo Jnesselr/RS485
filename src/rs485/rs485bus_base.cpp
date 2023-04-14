@@ -159,13 +159,13 @@ void RS485BusBase::enableWrite(bool writeEnabled) {
   if(writeEnabled && ! writeCurrentlyEnabled) {
     writeCurrentlyEnabled = writeEnabled;
 
-    // delayMicroseconds(10);
+    delayMicroseconds(settleTime);
     digitalWrite(writeEnablePin, HIGH);
     delayMicroseconds(settleTime);
   } else if(! writeEnabled && writeCurrentlyEnabled) {
     writeCurrentlyEnabled = writeEnabled;
 
-    // delayMicroseconds(10);
+    delayMicroseconds(settleTime);
     digitalWrite(writeEnablePin, LOW);
     delayMicroseconds(settleTime);
   }

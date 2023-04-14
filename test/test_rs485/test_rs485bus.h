@@ -112,9 +112,11 @@ TEST_F(RS485BusTest, writing_a_byte_verifies_it_was_written) {
 
   Verify(
     Method(spy, available),
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(spy, write).Using(0x37),
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
@@ -166,9 +168,11 @@ TEST_F(RS485BusTest, writing_a_byte_with_a_different_settle_time) {
 
   Verify(
     Method(spy, available),
+    Method(ArduinoFake(), delayMicroseconds).Using(6),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
     Method(ArduinoFake(), delayMicroseconds).Using(6),
     Method(spy, write).Using(0x37),
+    Method(ArduinoFake(), delayMicroseconds).Using(6),
     Method(ArduinoFake(), delayMicroseconds).Using(6),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
     Method(ArduinoFake(), delayMicroseconds).Using(6),
@@ -187,9 +191,11 @@ TEST_F(RS485BusTest, writing_a_byte_when_a_different_one_is_read) {
 
   Verify(
     Method(spy, available),
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(spy, write).Using(0x37),
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
@@ -209,9 +215,11 @@ TEST_F(RS485BusTest, writing_a_byte_when_a_different_one_is_read_first) {
 
   Verify(
     Method(spy, available), // Returns 0
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(spy, write).Using(0x37),
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
@@ -238,9 +246,11 @@ TEST_F(RS485BusTest, writing_a_byte_when_no_new_byte_is_available) {
 
   Verify(
     Method(spy, available),
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(spy, write).Using(0x37),
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
@@ -258,9 +268,11 @@ TEST_F(RS485BusTest, writing_a_byte_when_no_new_byte_is_available_with_delays) {
 
   Verify(
     Method(spy, available),
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(spy, write).Using(0x37),
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
@@ -291,9 +303,11 @@ TEST_F(RS485BusTest, writing_a_byte_that_eventually_returns_correct_value) {
 
   Verify(
     Method(spy, available), // Returns 0
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(spy, write).Using(0x37),
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
@@ -329,9 +343,11 @@ TEST_F(RS485BusTest, writing_a_byte_if_that_byte_is_in_that_prefetched_buffer) {
 
   Verify(
     Method(spy, available),  // Returns 0
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(spy, write).Using(0x37),
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
@@ -415,9 +431,11 @@ TEST_F(RS485BusTest, write_when_buffer_becomes_full) {
 
   Verify(
     Method(spy, available), // Returns 0
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(spy, write).Using(0x37),
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
@@ -446,9 +464,11 @@ TEST_F(RS485BusTest, write_when_buffer_becomes_full_but_no_more_is_available) {
 
   Verify(
     Method(spy, available), // Returns 0
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(spy, write).Using(0x37),
+    Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
