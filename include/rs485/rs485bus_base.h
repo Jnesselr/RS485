@@ -58,18 +58,18 @@ public:
   VIRTUAL_FOR_UNIT_TEST int16_t operator[](size_t index) const;
 
   // How long to wait between read attempts to read back our written byte.
-  void setReadBackDelay(ArduinoTime_t delay_ms);
+  void setReadBackDelay(TimeMilliseconds_t delay_ms);
   // How many times will we try to read back our byte before giving up.
   void setReadBackRetries(size_t retryCount);
   // If we see new bytes right before we attempt to write a byte, how long do we wait before checking again.
-  void setPreFetchDelay(ArduinoTime_t delay_ms);
+  void setPreFetchDelay(TimeMilliseconds_t delay_ms);
   // How many times do we recheck for new bytes before giving up and not writing our byte.
   void setPreFetchRetries(size_t retryCount);
   /*
   How long to wait after enabling the write pin, after writing, and after disabling the write pin.
   The same value is used for all 3. Setting this value too low prevents writes from being read back.
   */
-  void setSettleTime(ArduinoTime_t settleTime_ms);
+  void setSettleTime(TimeMilliseconds_t settleTime_ms);
 
   VIRTUAL_FOR_UNIT_TEST void enableWrite(bool writeEnabled);
 
@@ -89,11 +89,11 @@ private:
   size_t tail = 0;
   bool full = false;
 
-  ArduinoTime_t readBackRetryMs = 0;
+  TimeMicroseconds_t readBackRetryTime = 0;
   size_t readBackRetryCount = 0;
-  ArduinoTime_t preFetchDelayMs = 0;
+  TimeMilliseconds_t preFetchDelayMs = 0;
   size_t preFetchRetryCount = 0;
-  ArduinoTime_t settleTimeMs = 2;
+  TimeMilliseconds_t settleTimeMs = 2;
 
   bool writeCurrentlyEnabled = false;
 };

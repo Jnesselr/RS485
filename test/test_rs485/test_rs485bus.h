@@ -22,7 +22,7 @@ public:
     bus8.setSettleTime(settleTime);
   };
 
-  const ArduinoTime_t settleTime = 9;
+  const TimeMilliseconds_t settleTime = 9;
   AssertableBusIO busIO;
   Mock<AssertableBusIO> spy = busIO.spy();
 
@@ -265,11 +265,11 @@ TEST_F(RS485BusTest, writing_a_byte_when_no_new_byte_is_available_with_delays) {
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
     Method(ArduinoFake(), delay).Using(settleTime),
     Method(spy, available),
-    Method(ArduinoFake(), delay).Using(5),
+    Method(ArduinoFake(), delayMicroseconds).Using(5),
     Method(spy, available),
-    Method(ArduinoFake(), delay).Using(5),
+    Method(ArduinoFake(), delayMicroseconds).Using(5),
     Method(spy, available),
-    Method(ArduinoFake(), delay).Using(5),
+    Method(ArduinoFake(), delayMicroseconds).Using(5),
     Method(spy, available)
   ).Once();
 
@@ -298,11 +298,11 @@ TEST_F(RS485BusTest, writing_a_byte_that_eventually_returns_correct_value) {
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
     Method(ArduinoFake(), delay).Using(settleTime),
     Method(spy, available), // Returns 0
-    Method(ArduinoFake(), delay).Using(7),
+    Method(ArduinoFake(), delayMicroseconds).Using(7),
     Method(spy, available), // Returns 1
     Method(spy, read),
     Method(spy, available), // Returns 0
-    Method(ArduinoFake(), delay).Using(7),
+    Method(ArduinoFake(), delayMicroseconds).Using(7),
     Method(spy, available), // Returns 1
     Method(spy, read)
   ).Once();

@@ -38,7 +38,7 @@ bool Packetizer::hasPacket() {
     return true;  // We have a packet already, no need to do any searching
   }
 
-  ArduinoTime_t startTimeMs = millis();
+  TimeMilliseconds_t startTimeMs = millis();
 
   while(true) {
     fetchFromBus();
@@ -54,7 +54,7 @@ bool Packetizer::hasPacket() {
       }
     }
 
-    ArduinoTime_t currentTimeMs = millis();
+    TimeMilliseconds_t currentTimeMs = millis();
     
     if((currentTimeMs - startTimeMs) >= maxReadTimeoutMs) {
       return false;  // We timed out trying to read a valid packet
@@ -154,14 +154,14 @@ void Packetizer::clearPacket() {
   lastBusAvailable = 0;
 }
 
-void Packetizer::setMaxReadTimeout(ArduinoTime_t maxReadTimeoutMs) {
+void Packetizer::setMaxReadTimeout(TimeMilliseconds_t maxReadTimeoutMs) {
   this->maxReadTimeoutMs = maxReadTimeoutMs;
 }
 
 PacketWriteResult Packetizer::writePacket(const uint8_t* buffer, size_t bufferSize) {
-  ArduinoTime_t startTimeMs = millis();
+  TimeMilliseconds_t startTimeMs = millis();
   if(startTimeMs - lastByteReadTimeMs < busQuietTimeMs) {
-    ArduinoTime_t delayTime = busQuietTimeMs - (startTimeMs - lastByteReadTimeMs);
+    TimeMilliseconds_t delayTime = busQuietTimeMs - (startTimeMs - lastByteReadTimeMs);
 
     while(true) {
       delay(delayTime);
@@ -203,11 +203,11 @@ PacketWriteResult Packetizer::writePacket(const uint8_t* buffer, size_t bufferSi
   return PacketWriteResult::OK;
 }
 
-void Packetizer::setMaxWriteTimeout(ArduinoTime_t maxWriteTimeoutMs) {
+void Packetizer::setMaxWriteTimeout(TimeMilliseconds_t maxWriteTimeoutMs) {
   this->maxWriteTimeoutMs = maxWriteTimeoutMs;
 }
 
-void Packetizer::setBusQuietTime(ArduinoTime_t busQuietTimeMs) {
+void Packetizer::setBusQuietTime(TimeMilliseconds_t busQuietTimeMs) {
   this->busQuietTimeMs = busQuietTimeMs;
 }
 

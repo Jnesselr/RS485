@@ -10,4 +10,5 @@ PrepBus::PrepBus() {
   When(Method(ArduinoFake(), pinMode)).AlwaysReturn();
   When(Method(ArduinoFake(), digitalWrite)).AlwaysReturn();
   When(Method(ArduinoFake(), delay)).AlwaysReturn();
+  When(Method(ArduinoFake(), delayMicroseconds)).AlwaysReturn();
 }

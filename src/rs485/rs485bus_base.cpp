@@ -49,8 +49,7 @@ WriteResult RS485BusBase::write(uint8_t writeValue) {
     bool bytesAvailable = (busIO.available() > 0);
     if(! bytesAvailable) {
       for(size_t i=0; i < readBackRetryCount; i++) {
-        // delayMicroseconds(100);
-        delay(readBackRetryMs);
+        delayMicroseconds(readBackRetryTime);
 
         bytesAvailable |= (busIO.available() > 0);
         if(bytesAvailable) {
@@ -137,22 +136,22 @@ int16_t RS485BusBase::operator[](size_t index) const {
   return getByte(bufferPosition);
 }
 
-void RS485BusBase::setReadBackDelay(ArduinoTime_t delay_ms) {
-  this->readBackRetryMs = delay_ms;
+void RS485BusBase::setReadBackDelay(TimeMicroseconds_t delayTime) {
+  this->readBackRetryTime = delayTime;
 }
 
 void RS485BusBase::setReadBackRetries(size_t retryCount) {
   this->readBackRetryCount = retryCount;
 }
 
-void RS485BusBase::setPreFetchDelay(ArduinoTime_t delay_ms) {
+void RS485BusBase::setPreFetchDelay(TimeMilliseconds_t delay_ms) {
   this->preFetchDelayMs = delay_ms;
 }
 void RS485BusBase::setPreFetchRetries(size_t retryCount) {
   this->preFetchRetryCount = retryCount;
 }
 
-void RS485BusBase::setSettleTime(ArduinoTime_t settleTime_ms) {
+void RS485BusBase::setSettleTime(TimeMilliseconds_t settleTime_ms) {
   this->settleTimeMs = settleTime_ms;
 }
 

@@ -47,14 +47,14 @@ public:
    * How long to keep trying to keep trying to read a packet. If no new data is available, this value is irrelevent.
    * If this is too high and the bus is constantly receiving new data, then hasPacket will block.
    */
-  void setMaxReadTimeout(ArduinoTime_t maxReadTimeoutMs);
+  void setMaxReadTimeout(TimeMilliseconds_t maxReadTimeoutMs);
 
   PacketWriteResult writePacket(const uint8_t* buffer, size_t bufferSize);
   
   // Before attempting to write a packet, how long should the bus not receive any new bytes
-  void setBusQuietTime(ArduinoTime_t busQuietTimeMs);
+  void setBusQuietTime(TimeMilliseconds_t busQuietTimeMs);
   // The maximum amount of time we are willing to wait for the bus to go quiet
-  void setMaxWriteTimeout(ArduinoTime_t maxWriteTimeoutMs);
+  void setMaxWriteTimeout(TimeMilliseconds_t maxWriteTimeoutMs);
 
   // Add a filter to this packetizer. See the Filter class for more details
   void setFilter(const Filter& filter);
@@ -79,9 +79,9 @@ private:
   size_t startIndex = 0;
   uint64_t recheckBitmap = 0;
 
-  ArduinoTime_t maxReadTimeoutMs = -1;
-  ArduinoTime_t maxWriteTimeoutMs = -1;
+  TimeMilliseconds_t maxReadTimeoutMs = -1;
+  TimeMilliseconds_t maxWriteTimeoutMs = -1;
 
-  ArduinoTime_t lastByteReadTimeMs = 0;  // Last time any bytes were known to be fetched
-  ArduinoTime_t busQuietTimeMs = 0;  // How long the bus needs to go without fetching a byte
+  TimeMilliseconds_t lastByteReadTimeMs = 0;  // Last time any bytes were known to be fetched
+  TimeMilliseconds_t busQuietTimeMs = 0;  // How long the bus needs to go without fetching a byte
 };
