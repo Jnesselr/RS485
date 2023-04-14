@@ -89,8 +89,8 @@ private:
   size_t tail = 0;
   bool full = false;
 
-  TimeMicroseconds_t readBackRetryTime = 0;
-  size_t readBackRetryCount = 0;
+  TimeMicroseconds_t readBackRetryTime = 10;
+  size_t readBackRetryCount = 100;
   TimeMicroseconds_t preFetchDelayTime = 0;
   size_t preFetchRetryCount = 0;
   TimeMicroseconds_t settleTime = 2;

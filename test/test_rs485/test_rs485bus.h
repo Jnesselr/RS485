@@ -180,13 +180,14 @@ TEST_F(RS485BusTest, writing_a_byte_with_a_different_settle_time) {
 }
 
 TEST_F(RS485BusTest, writing_a_byte_when_a_different_one_is_read) {
+  bus8.setReadBackRetries(0);
   busIO << 0x21;  // Next byte to be read
   When(Method(spy, available)).Return(0, 1, 0);
 
   EXPECT_EQ(WriteResult::FAILED_READ_BACK, bus8.write(0x37));
 
   Verify(
-    Method(spy, available),
+    Method(spy, available),  // Returns 0
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, HIGH),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
@@ -194,9 +195,9 @@ TEST_F(RS485BusTest, writing_a_byte_when_a_different_one_is_read) {
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
     Method(ArduinoFake(), digitalWrite).Using(writeEnablePin, LOW),
     Method(ArduinoFake(), delayMicroseconds).Using(settleTime),
-    Method(spy, available),
+    Method(spy, available),  // Returns 1
     Method(spy, read),
-    Method(spy, available)
+    Method(spy, available)  // Returns 0
   ).Once();
 
   VerifyNoOtherInvocations(spy);
