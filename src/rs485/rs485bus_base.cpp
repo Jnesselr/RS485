@@ -37,7 +37,7 @@ WriteResult RS485BusBase::write(uint8_t writeValue) {
   }
 
   busIO.write(writeValue);
-  delay(settleTimeMs);
+  delayMicroseconds(settleTime);
 
   if(! alreadySetToWrite) {
     enableWrite(false);
@@ -144,15 +144,15 @@ void RS485BusBase::setReadBackRetries(size_t retryCount) {
   this->readBackRetryCount = retryCount;
 }
 
-void RS485BusBase::setPreFetchDelay(TimeMicroseconds_t delay_ms) {
-  this->preFetchDelayTime = delay_ms;
+void RS485BusBase::setPreFetchDelay(TimeMicroseconds_t delayTime) {
+  this->preFetchDelayTime = delayTime;
 }
 void RS485BusBase::setPreFetchRetries(size_t retryCount) {
   this->preFetchRetryCount = retryCount;
 }
 
-void RS485BusBase::setSettleTime(TimeMilliseconds_t settleTime_ms) {
-  this->settleTimeMs = settleTime_ms;
+void RS485BusBase::setSettleTime(TimeMicroseconds_t settleTime) {
+  this->settleTime = settleTime;
 }
 
 void RS485BusBase::enableWrite(bool writeEnabled) {
@@ -161,15 +161,13 @@ void RS485BusBase::enableWrite(bool writeEnabled) {
 
     // delayMicroseconds(10);
     digitalWrite(writeEnablePin, HIGH);
-    // delayMicroseconds(10);
-    delay(settleTimeMs);
+    delayMicroseconds(settleTime);
   } else if(! writeEnabled && writeCurrentlyEnabled) {
     writeCurrentlyEnabled = writeEnabled;
 
     // delayMicroseconds(10);
     digitalWrite(writeEnablePin, LOW);
-    // delayMicroseconds(10);
-    delay(settleTimeMs);
+    delayMicroseconds(settleTime);
   }
 }
 

@@ -93,7 +93,7 @@ private:
   size_t readBackRetryCount = 0;
   TimeMicroseconds_t preFetchDelayTime = 0;
   size_t preFetchRetryCount = 0;
-  TimeMilliseconds_t settleTimeMs = 2;
+  TimeMicroseconds_t settleTime = 2;
 
   bool writeCurrentlyEnabled = false;
 };
