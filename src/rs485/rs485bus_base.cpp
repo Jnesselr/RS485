@@ -37,7 +37,6 @@ WriteResult RS485BusBase::write(uint8_t writeValue) {
   }
 
   busIO.write(writeValue);
-  delayMicroseconds(settleTime);
 
   if(! alreadySetToWrite) {
     enableWrite(false);
