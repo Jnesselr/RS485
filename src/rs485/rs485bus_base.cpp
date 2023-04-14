@@ -30,14 +30,18 @@ WriteResult RS485BusBase::write(uint8_t writeValue) {
     return WriteResult::NO_WRITE_NEW_BYTES;
   }
 
-  digitalWrite(writeEnablePin, HIGH);
-  delay(settleTimeMs);
+  bool alreadySetToWrite = writeCurrentlyEnabled;
+
+  if(! alreadySetToWrite) {
+    enableWrite(true);
+  }
 
   busIO.write(writeValue);
   delay(settleTimeMs);
 
-  digitalWrite(writeEnablePin, LOW);
-  delay(settleTimeMs);
+  if(! alreadySetToWrite) {
+    enableWrite(false);
+  }
 
   bool readUnexpectedBytes = false;
 
@@ -149,4 +153,22 @@ void RS485BusBase::setPreFetchRetries(size_t retryCount) {
 
 void RS485BusBase::setSettleTime(ArduinoTime_t settleTime_ms) {
   this->settleTimeMs = settleTime_ms;
+}
+
+void RS485BusBase::enableWrite(bool writeEnabled) {
+  if(writeEnabled && ! writeCurrentlyEnabled) {
+    writeCurrentlyEnabled = writeEnabled;
+
+    // delayMicroseconds(10);
+    digitalWrite(writeEnablePin, HIGH);
+    // delayMicroseconds(10);
+    delay(settleTimeMs);
+  } else if(! writeEnabled && writeCurrentlyEnabled) {
+    writeCurrentlyEnabled = writeEnabled;
+
+    // delayMicroseconds(10);
+    digitalWrite(writeEnablePin, LOW);
+    // delayMicroseconds(10);
+    delay(settleTimeMs);
+  }
 }

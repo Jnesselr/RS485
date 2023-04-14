@@ -125,6 +125,38 @@ TEST_F(RS485BusTest, writing_a_byte_verifies_it_was_written) {
   VerifyNoOtherInvocations(spy);
 }
 
+TEST_F(RS485BusTest, writing_a_byte_with_writing_already_enabled) {
+  busIO << 0x37 << 0x46;  // Next byte to be read
+
+  bus8.enableWrite(true);
+
+  ArduinoFake().ClearInvocationHistory();
+
+  When(Method(spy, available)).Return(0, 1);
+  EXPECT_EQ(WriteResult::OK, bus8.write(0x37));
+
+  Verify(
+    Method(spy, available),
+    Method(spy, write).Using(0x37),
+    Method(ArduinoFake(), delay).Using(settleTime),
+    Method(spy, available),
+    Method(spy, read)
+  ).Once();
+
+  VerifyNoOtherInvocations(spy);
+
+  When(Method(spy, available)).Return(0, 1);
+  EXPECT_EQ(WriteResult::OK, bus8.write(0x46));
+
+  Verify(
+    Method(spy, available),
+    Method(spy, write).Using(0x37),
+    Method(ArduinoFake(), delay).Using(settleTime),
+    Method(spy, available),
+    Method(spy, read)
+  ).Once();
+}
+
 TEST_F(RS485BusTest, writing_a_byte_with_a_different_settle_time) {
   bus8.setSettleTime(6);
   busIO << 0x37;  // Next byte to be read

@@ -71,6 +71,8 @@ public:
   */
   void setSettleTime(ArduinoTime_t settleTime_ms);
 
+  void enableWrite(bool writeEnabled);
+
 protected:
   virtual void setByte(size_t bufferIndex, uint8_t value) = 0;
   virtual uint8_t getByte(size_t bufferIndex) const = 0;
@@ -92,4 +94,6 @@ private:
   ArduinoTime_t preFetchDelayMs = 0;
   size_t preFetchRetryCount = 0;
   ArduinoTime_t settleTimeMs = 2;
+
+  bool writeCurrentlyEnabled = false;
 };

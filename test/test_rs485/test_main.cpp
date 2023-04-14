@@ -10,11 +10,11 @@
 #include "test_packetizer_write.h"
 #include "test_packetizer_filter.h"
 
-// // Filters
+// Filters
 #include "filters/test_filter_by_value.h"
 #include "filters/test_combo_filter.h"
 
-// // Protocols
+// Protocols
 #include "protocols/test_photon.h"
 
 #if defined(ARDUINO)
