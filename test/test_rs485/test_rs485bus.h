@@ -355,17 +355,17 @@ TEST_F(RS485BusTest, fetching_bytes_before_write_returns_no_write_new_bytes) {
     Method(spy, available), // Returns 1, fetch #1
     Method(spy, read),      // 0x21
     Method(spy, available), // Returns 0, fetch #1
-    Method(ArduinoFake(), delay).Using(7),
+    Method(ArduinoFake(), delayMicroseconds).Using(7),
     Method(spy, available), // Returns 0, fetch #2
-    Method(ArduinoFake(), delay).Using(7),
+    Method(ArduinoFake(), delayMicroseconds).Using(7),
     Method(spy, available), // Returns 1, fetch #3
     Method(spy, read),      // 0x34
     Method(spy, available), // Returns 0, fetch #3
-    Method(ArduinoFake(), delay).Using(7),
+    Method(ArduinoFake(), delayMicroseconds).Using(7),
     Method(spy, available), // Returns 0, fetch #4
-    Method(ArduinoFake(), delay).Using(7),
+    Method(ArduinoFake(), delayMicroseconds).Using(7),
     Method(spy, available), // Returns 0, fetch #5
-    Method(ArduinoFake(), delay).Using(7),
+    Method(ArduinoFake(), delayMicroseconds).Using(7),
     Method(spy, available)  // Returns 0, fetch #6
   ).Once();
 

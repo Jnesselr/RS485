@@ -15,7 +15,7 @@ WriteResult RS485BusBase::write(uint8_t writeValue) {
   bool newBytesFetched = anyBytesFetched;
   while(newBytesFetched) {
     for(size_t i=0; i <= preFetchRetryCount; i++) {
-      delay(preFetchDelayMs);
+      delayMicroseconds(preFetchDelayTime);
 
       newBytesFetched = fetch() > 0;
       if(newBytesFetched) {
@@ -144,8 +144,8 @@ void RS485BusBase::setReadBackRetries(size_t retryCount) {
   this->readBackRetryCount = retryCount;
 }
 
-void RS485BusBase::setPreFetchDelay(TimeMilliseconds_t delay_ms) {
-  this->preFetchDelayMs = delay_ms;
+void RS485BusBase::setPreFetchDelay(TimeMicroseconds_t delay_ms) {
+  this->preFetchDelayTime = delay_ms;
 }
 void RS485BusBase::setPreFetchRetries(size_t retryCount) {
   this->preFetchRetryCount = retryCount;
