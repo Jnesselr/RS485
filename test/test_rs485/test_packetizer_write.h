@@ -39,7 +39,7 @@ protected:
   }
 };
 
-TEST_F(PacketizerWriteTest, write_package_with_no_interruptions) {
+TEST_F(PacketizerWriteTest, write_packet_with_no_interruptions) {
   When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
 
   PacketWriteResult status = this->writePacket();
@@ -276,7 +276,7 @@ TEST_F(PacketizerWriteTest, no_write_new_bytes_in_middle_of_message) {
   VerifyNoOtherInvocations(Method(fakeBus, write));
 }
 
-TEST_F(PacketizerWriteTest, write_package_delays_to_ensure_quiet_time) {
+TEST_F(PacketizerWriteTest, write_packet_delays_to_ensure_quiet_time) {
   packetizer.setMaxWriteTimeout(100);
   packetizer.setBusQuietTime(100);
   When(Method(ArduinoFake(), millis)).AlwaysReturn(15);
@@ -305,7 +305,7 @@ TEST_F(PacketizerWriteTest, write_package_delays_to_ensure_quiet_time) {
   VerifyNoOtherInvocations(Method(fakeBus, write));
 }
 
-TEST_F(PacketizerWriteTest, write_package_delays_to_ensure_quiet_time_in_noisy_environment) {
+TEST_F(PacketizerWriteTest, write_packet_delays_to_ensure_quiet_time_in_noisy_environment) {
   packetizer.setMaxWriteTimeout(1000);
   packetizer.setBusQuietTime(100);
 
@@ -347,7 +347,7 @@ TEST_F(PacketizerWriteTest, write_package_delays_to_ensure_quiet_time_in_noisy_e
   VerifyNoOtherInvocations(Method(fakeBus, write));
 }
 
-TEST_F(PacketizerWriteTest, write_package_delays_until_timeout) {
+TEST_F(PacketizerWriteTest, write_packet_delays_until_timeout) {
   packetizer.setMaxWriteTimeout(300);
   packetizer.setBusQuietTime(100);
 
