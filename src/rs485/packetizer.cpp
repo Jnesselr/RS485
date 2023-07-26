@@ -150,10 +150,6 @@ Packet Packetizer::getPacket() {
   }
 }
 
-size_t Packetizer::packetLength() {
-  return packetSize;
-}
-
 void Packetizer::clearPacket() {
   if(packetSize == 0) {
     return;

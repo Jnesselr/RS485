@@ -27,6 +27,20 @@ protected:
     ArduinoFake().ClearInvocationHistory();
   };
 
+  virtual Packetizer* getPacketizer() = 0;
+
+  void expectNoPacket() {
+    Packet packet = getPacketizer()->getPacket();
+    EXPECT_EQ(0, packet.startIndex);
+    EXPECT_EQ(0, packet.endIndex);
+  }
+
+  void expectPacket(size_t startIndex, size_t endIndex) {
+    Packet packet = getPacketizer()->getPacket();
+    EXPECT_EQ(startIndex, packet.startIndex);
+    EXPECT_EQ(endIndex, packet.endIndex);
+  }
+
   volatile unsigned long currentMicros = 0;
   AssertableBusIO busIO;
   ProtocolMatchingBytes protocol;
@@ -41,6 +55,8 @@ protected:
       packetizer.setMaxReadTimeout(20);
     }
 
+  virtual Packetizer* getPacketizer() { return &packetizer; }
+
   RS485Bus<8> bus;
   Packetizer packetizer;
 };
@@ -52,6 +68,8 @@ protected:
     packetizer(bus, protocol) {
       packetizer.setMaxReadTimeout(20);
     }
+
+  virtual Packetizer* getPacketizer() { return &packetizer; }
 
   RS485Bus<3> bus;
   Packetizer packetizer;
@@ -65,6 +83,8 @@ protected:
       packetizer.setMaxReadTimeout(20);
     }
 
+  virtual Packetizer* getPacketizer() { return &packetizer; }
+
   constexpr static size_t u64Size = sizeof(uint64_t) * 8;  // Needs to match the date type used for recheckBitmap in Packetizer
   constexpr static size_t bufferSize = u64Size + 20;  // uint64_t size + 20 should be good enough for all the tests
   RS485Bus<bufferSize> bus;
@@ -73,10 +93,7 @@ protected:
 
 TEST_F(PacketizerReadBusTest, by_default_no_packets_are_available) {
   EXPECT_FALSE(packetizer.hasPacket());
-  EXPECT_EQ(0, packetizer.packetLength());
-  Packet packet = packetizer.getPacket();
-  EXPECT_EQ(0, packet.startIndex);
-  EXPECT_EQ(0, packet.endIndex);
+  expectNoPacket();
 }
 
 TEST_F(PacketizerReadBusTest, can_get_simple_packet) {
@@ -84,13 +101,10 @@ TEST_F(PacketizerReadBusTest, can_get_simple_packet) {
 
   // Ensure the bus hasn't fetched a single byte from the serial bus yet, meaning the packetizer calls fetch
   EXPECT_EQ(0, bus.available());
-  EXPECT_EQ(0, packetizer.packetLength());
+  expectNoPacket();
 
   EXPECT_TRUE(packetizer.hasPacket());
-  EXPECT_EQ(3, packetizer.packetLength());
-  Packet packet = packetizer.getPacket();
-  EXPECT_EQ(0, packet.startIndex);
-  EXPECT_EQ(2, packet.endIndex);
+  expectPacket(0, 2);
 
   EXPECT_EQ(4, bus.available()); // The first byte isn't part of the packet
   EXPECT_EQ(0x02, bus[0]);
@@ -101,10 +115,7 @@ TEST_F(PacketizerReadBusTest, can_get_simple_packet) {
 
   packetizer.clearPacket();
   EXPECT_FALSE(packetizer.hasPacket());
-  EXPECT_EQ(0, packetizer.packetLength());
-  packet = packetizer.getPacket();
-  EXPECT_EQ(0, packet.startIndex);
-  EXPECT_EQ(0, packet.endIndex);
+  expectNoPacket();
   EXPECT_EQ(1, bus.available());
   EXPECT_EQ(0x04, bus[0]);
   EXPECT_EQ(-1, bus[1]);
@@ -115,13 +126,10 @@ TEST_F(PacketizerReadBusTest, only_no_bytes_get_skipped) {
 
   // Ensure the bus hasn't fetched a single byte from the serial bus yet, meaning the packetizer calls fetch
   EXPECT_EQ(0, bus.available());
-  EXPECT_EQ(0, packetizer.packetLength());
+  expectNoPacket();
 
   EXPECT_FALSE(packetizer.hasPacket());
-  EXPECT_EQ(0, packetizer.packetLength());
-  Packet packet = packetizer.getPacket();
-  EXPECT_EQ(0, packet.startIndex);
-  EXPECT_EQ(0, packet.endIndex);
+  expectNoPacket();
 
   EXPECT_EQ(2, bus.available());
   EXPECT_EQ(0x02, bus[0]);  // Returns "not enough bytes", so isn't discarded
@@ -135,12 +143,10 @@ TEST_F(PacketizerReadBus3Test, not_enough_bytes_get_skipped_if_buffer_is_full) {
 
   // Ensure the bus hasn't fetched a single byte from the serial bus yet, meaning the packetizer calls fetch
   EXPECT_EQ(0, bus.available());
-  EXPECT_EQ(0, packetizer.packetLength());
+  expectNoPacket();
 
   EXPECT_FALSE(packetizer.hasPacket());
-  Packet packet = packetizer.getPacket();
-  EXPECT_EQ(0, packet.startIndex);
-  EXPECT_EQ(0, packet.endIndex);
+  expectNoPacket();
 
   EXPECT_EQ(2, bus.available());
   EXPECT_EQ(0x04, bus[0]);
@@ -164,14 +170,10 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
   
   // Ensure the bus hasn't fetched a single byte from the serial bus yet, meaning the packetizer calls fetch
   EXPECT_EQ(0, bus.available());
-  EXPECT_EQ(0, packetizer.packetLength());
 
   EXPECT_FALSE(packetizer.hasPacket());
-  EXPECT_EQ(0, packetizer.packetLength());
   EXPECT_EQ(u64Size, bus.available());
-  Packet packet = packetizer.getPacket();
-  EXPECT_EQ(0, packet.startIndex);
-  EXPECT_EQ(0, packet.endIndex);
+  expectNoPacket();
 
   // -- We want to verify that "isPacket" got called on everything
 
@@ -184,11 +186,8 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
 
   // Call our hasPacket method
   EXPECT_FALSE(packetizer.hasPacket());
-  EXPECT_EQ(0, packetizer.packetLength());
   EXPECT_EQ(u64Size, bus.available());
-  packet = packetizer.getPacket();
-  EXPECT_EQ(0, packet.startIndex);
-  EXPECT_EQ(0, packet.endIndex);
+  expectNoPacket();
 
   // And verify
   VerifyNoOtherInvocations(Method(protocolSpy, isPacket));
@@ -201,11 +200,8 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
 
   // Call our hasPacket method
   EXPECT_TRUE(packetizer.hasPacket());
-  EXPECT_EQ(3, packetizer.packetLength());
   EXPECT_EQ(5, bus.available());  // Everything else got cleared out but the packet and our two extra bytes
-  packet = packetizer.getPacket();
-  EXPECT_EQ(0, packet.startIndex);
-  EXPECT_EQ(2, packet.endIndex);
+  expectPacket(0, 2);
 
   // And finally, verify
   for(size_t i = 0; i < u64Size; i++) {
@@ -223,11 +219,8 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
 
   // Call our hasPacket method
   EXPECT_TRUE(packetizer.hasPacket());
-  EXPECT_EQ(3, packetizer.packetLength());
   EXPECT_EQ(5, bus.available());  // Everything else got cleared out but the packet and our two extra bytes
-  packet = packetizer.getPacket();
-  EXPECT_EQ(0, packet.startIndex);
-  EXPECT_EQ(2, packet.endIndex);
+  expectPacket(0, 2);
 
   // Verify nothing was called, meaning the packetizer cached the reuslt from last time
   VerifyNoOtherInvocations(Method(protocolSpy, isPacket));
@@ -238,10 +231,7 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
 
   // Call our hasPacket method
   EXPECT_FALSE(packetizer.hasPacket());
-  EXPECT_EQ(0, packetizer.packetLength());
-  packet = packetizer.getPacket();
-  EXPECT_EQ(0, packet.startIndex);
-  EXPECT_EQ(0, packet.endIndex);
+  expectNoPacket();
 
   Verify(Method(protocolSpy, isPacket).Using(_, 0, 0)).Once();  // (ul64Size + 1) byte -> NO
   Verify(Method(protocolSpy, isPacket).Using(_, 0, 1)).Once();  // (ul64Size + 2) byte -> NOT_ENOUGH_BYTES
@@ -263,14 +253,10 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_past_our_limit_get_rechecked) {
   
   // Ensure the bus hasn't fetched a single byte from the serial bus yet, meaning the packetizer calls fetch
   EXPECT_EQ(0, bus.available());
-  EXPECT_EQ(0, packetizer.packetLength());
 
   EXPECT_FALSE(packetizer.hasPacket());
-  EXPECT_EQ(0, packetizer.packetLength());
   EXPECT_EQ(u64Size + 1, bus.available());
-  Packet packet = packetizer.getPacket();
-  EXPECT_EQ(0, packet.startIndex);
-  EXPECT_EQ(0, packet.endIndex);
+  expectNoPacket();
 
   // -- We want to verify that "isPacket" got called on everything
   for(size_t i = 0; i < bus.bufferSize(); i++) {
@@ -289,11 +275,8 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_past_our_limit_get_rechecked) {
 
   // Call our hasPacket method
   EXPECT_FALSE(packetizer.hasPacket());
-  EXPECT_EQ(0, packetizer.packetLength());
   EXPECT_EQ(u64Size + 2, bus.available());
-  packet = packetizer.getPacket();
-  EXPECT_EQ(0, packet.startIndex);
-  EXPECT_EQ(0, packet.endIndex);
+  expectNoPacket();
 
   // Verify that only bytes at (0), (u64Size), and (u64Size + 1) were checked.
   // (u64Size + 1) wasn't ever checked, (0) is our "not enough bytes", and (u64Size) is past where we're able to check it.
@@ -327,13 +310,10 @@ TEST_F(PacketizerReadBus3Test, can_get_packet_even_if_it_is_past_bus_size_if_byt
 
   // Ensure the bus hasn't fetched a single byte from the serial bus yet, meaning the packetizer calls fetch
   EXPECT_EQ(0, bus.available());
-  EXPECT_EQ(0, packetizer.packetLength());
+  expectNoPacket();
 
   ASSERT_TRUE(packetizer.hasPacket());
-  EXPECT_EQ(2, packetizer.packetLength());
-  Packet packet = packetizer.getPacket();
-  EXPECT_EQ(0, packet.startIndex);
-  EXPECT_EQ(1, packet.endIndex);
+  expectPacket(0, 1);
 
   EXPECT_EQ(2, bus.available());
   EXPECT_EQ(0x06, bus[0]);
@@ -342,10 +322,7 @@ TEST_F(PacketizerReadBus3Test, can_get_packet_even_if_it_is_past_bus_size_if_byt
 
   packetizer.clearPacket();
   ASSERT_FALSE(packetizer.hasPacket());
-  EXPECT_EQ(0, packetizer.packetLength());
-  packet = packetizer.getPacket();
-  EXPECT_EQ(0, packet.startIndex);
-  EXPECT_EQ(0, packet.endIndex);
+  expectNoPacket();
   EXPECT_EQ(0, bus.available());
   EXPECT_EQ(-1, bus[0]);
 }
@@ -369,13 +346,10 @@ TEST_F(PacketizerReadBus3Test, cannot_get_packet_if_timeout_is_reached) {
 
   // Ensure the bus hasn't fetched a single byte from the serial bus yet, meaning the packetizer calls fetch
   EXPECT_EQ(0, bus.available());
-  EXPECT_EQ(0, packetizer.packetLength());
+  expectNoPacket();
 
   EXPECT_FALSE(packetizer.hasPacket());
-  EXPECT_EQ(0, packetizer.packetLength());
-  Packet packet = packetizer.getPacket();
-  EXPECT_EQ(0, packet.startIndex);
-  EXPECT_EQ(0, packet.endIndex);
+  expectNoPacket();
 
   EXPECT_EQ(2, bus.available());
   EXPECT_EQ(0x04, bus[0]);

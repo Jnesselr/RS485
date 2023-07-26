@@ -43,10 +43,8 @@ public:
 
   // Fetch bytes from the bus and see if a packet is available based on the Protocol.
   bool hasPacket();
-  // The length of the packet available if hasPacket returns true. 0 otherwise.
-  size_t packetLength();
 
-  // Get the packet start/end index
+  // Get the packet start/end index. 0 for both if no packet is available.
   Packet getPacket();
 
   // Clear the packet. If a packet is found, further calls to hasPacket will return true until this method is called.
