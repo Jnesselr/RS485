@@ -76,14 +76,14 @@ private:
 
   RS485BusBase* bus;
   const Protocol* protocol;
-  size_t packetSize = 0;
+  size_t startIndex = 0;
+  size_t endIndex = 0;
 
   const Filter* filter = nullptr;
   size_t filterLookAhead = 0;
 
   bool shouldRecheck = true;
   size_t lastBusAvailable = 0;
-  size_t startIndex = 0;
   uint64_t recheckBitmap = 0;
 
   TimeMicroseconds_t maxReadTimeout = -1;

@@ -19,6 +19,9 @@ void Packetizer::eatOneByte() {
   bus->read();
   lastBusAvailable--; // read removes one byte from the bus
   startIndex--; // Reset us so we'll be reading the first byte again next time
+  if(endIndex > 0) {
+    endIndex--;  // Check for > 0 to handle both with and without packet cases.
+  }
   recheckBitmap >>= 1;
 }
 
@@ -34,7 +37,7 @@ void Packetizer::rejectByte(size_t location) {
 }
 
 bool Packetizer::hasPacket() {
-  if(packetSize > 0) {
+  if(endIndex > 0) {
     return true;  // We have a packet already, no need to do any searching
   }
 
@@ -91,14 +94,13 @@ bool Packetizer::hasPacketInnerLoop() {
       continue;
     }
 
-    size_t endIndex = lastBusAvailable - 1;
-    IsPacketResult result = protocol->isPacket(*bus, startIndex, endIndex);
+    IsPacketResult result = protocol->isPacket(*bus, startIndex, lastBusAvailable - 1);
 
     if(result.status == PacketStatus::NO) {
       rejectByte(startIndex);
     }
     else if(result.status == PacketStatus::YES) {
-      packetSize = result.packetLength;
+      endIndex = startIndex + result.packetLength - 1;
 
       // Clear out all bytes before startIndex
       while(startIndex > 0) {
@@ -108,7 +110,7 @@ bool Packetizer::hasPacketInnerLoop() {
       if(
         this->filter != nullptr &&
         this->filter->isEnabled() &&
-        ! this->filter->postFilter(*bus, 0, packetSize)
+        ! this->filter->postFilter(*bus, startIndex, endIndex)
       ) {
         clearPacket();
 
@@ -137,10 +139,10 @@ bool Packetizer::hasPacketInnerLoop() {
 }
 
 Packet Packetizer::getPacket() {
-  if(packetSize > 0) {
+  if(endIndex > 0) {
     return {
-      .startIndex = 0,
-      .endIndex = packetSize - 1,
+      .startIndex = startIndex,
+      .endIndex = endIndex,
     };
   } else {
     return {
@@ -151,14 +153,14 @@ Packet Packetizer::getPacket() {
 }
 
 void Packetizer::clearPacket() {
-  if(packetSize == 0) {
+  if(endIndex == 0) {
     return;
   }
 
-  while(packetSize > 0) {
+  while(endIndex != 0) {
     eatOneByte();
-    packetSize--;
   }
+  eatOneByte();  // endIndex will be 0 with one byte after the previous loop
 
   // Since nothing after our packet got checked, we reset this to 0 so it forcefully check new data
   lastBusAvailable = 0;
