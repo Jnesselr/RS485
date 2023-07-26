@@ -12,6 +12,11 @@ enum class PacketWriteResult {
   FAILED_TIMEOUT        // The bus wasn't quiet enough for us for long enough to start writing our packet
 };
 
+struct Packet {
+  size_t startIndex;
+  size_t endIndex;
+};
+
 /**
  * The Packetizer class wraps the RS485 Bus, allowing you to read and write packets more effeciently. While you don't have to
  * write anything using this class and can still use reading/writing on the bus directly, you must specify a Protocol
@@ -40,6 +45,10 @@ public:
   bool hasPacket();
   // The length of the packet available if hasPacket returns true. 0 otherwise.
   size_t packetLength();
+
+  // Get the packet start/end index
+  Packet getPacket();
+
   // Clear the packet. If a packet is found, further calls to hasPacket will return true until this method is called.
   void clearPacket();
 

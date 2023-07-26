@@ -136,6 +136,20 @@ bool Packetizer::hasPacketInnerLoop() {
   return false;
 }
 
+Packet Packetizer::getPacket() {
+  if(packetSize > 0) {
+    return {
+      .startIndex = 0,
+      .endIndex = packetSize - 1,
+    };
+  } else {
+    return {
+      .startIndex = 0,
+      .endIndex = 0,
+    };
+  }
+}
+
 size_t Packetizer::packetLength() {
   return packetSize;
 }
