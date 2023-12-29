@@ -51,7 +51,7 @@ public:
   bool isBufferFull() const;
   // Fetch however many bytes we can from our bus IO, returning how many bytes we just fetched
   VIRTUAL_FOR_UNIT_TEST size_t fetch();
-  // Reads one byte from our internal buffer and returns it. Calls fetch first. Returns -1 if no byte is available.
+  // Reads one byte from our internal buffer and returns it. Returns -1 if no byte is available.
   int16_t read();
 
   // For filters and protocols, this is how to view data inside our internal buffer.

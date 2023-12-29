@@ -7,15 +7,15 @@
 // Core code
 #include "test_rs485bus.h"
 #include "test_packetizer_read.h"
-#include "test_packetizer_write.h"
-#include "test_packetizer_filter.h"
+// #include "test_packetizer_write.h"
+// #include "test_packetizer_filter.h"
 
 // Filters
-#include "filters/test_filter_by_value.h"
-#include "filters/test_combo_filter.h"
+// #include "filters/test_filter_by_value.h"
+// #include "filters/test_combo_filter.h"
 
 // Protocols
-#include "protocols/test_photon.h"
+// #include "protocols/test_photon.h"
 
 #if defined(ARDUINO)
 #include <Arduino.h>

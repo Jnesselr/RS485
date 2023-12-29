@@ -100,13 +100,13 @@ size_t RS485BusBase::fetch() {
     bytesRead++;
 
     putByteInBuffer(busIO.read());
+    // EXPECT_TRUE(false) << "Putting byte in buffer " << bytesRead;
   }
 
   return bytesRead;
 }
 
 int16_t RS485BusBase::read() {
-  fetch();
   if(available() == 0) {
     return -1;
   }

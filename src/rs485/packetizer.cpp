@@ -36,6 +36,7 @@ void Packetizer::rejectByte(size_t location) {
   }
 }
 
+/**
 bool Packetizer::hasPacket() {
   if(endIndex > 0) {
     return true;  // We have a packet already, no need to do any searching
@@ -66,6 +67,7 @@ bool Packetizer::hasPacket() {
 
   return false;
 }
+*/
 
 bool Packetizer::hasPacketInnerLoop() {
   for(startIndex = 0; startIndex < lastBusAvailable; startIndex++) {
@@ -124,6 +126,89 @@ bool Packetizer::hasPacketInnerLoop() {
          */
         return false;
       }
+
+      return true;
+    }
+    else if(result.status == PacketStatus::NOT_ENOUGH_BYTES) {
+      // Remove any "not enough bytes" byte at the start, only if the buffer is full
+      if(startIndex == 0 && bus->isBufferFull()) {
+        eatOneByte();
+      }
+    }
+  }
+
+  return false;
+}
+
+bool Packetizer::hasPacketNow() {
+  if(endIndex > 0) {
+    return true;  // We have a packet already, no need to do any searching
+  }
+
+  size_t currentBusAvailable = bus->available();
+
+  if(lastBusAvailable == currentBusAvailable) {
+    return false;  // Don't bother rechecking our bus, we have the same number of bytes to work with.
+  }
+
+  lastBusAvailable = currentBusAvailable;
+
+  for(startIndex = 0; startIndex < lastBusAvailable; startIndex++) {
+    bool shouldCallIsPacket = true;
+    
+    if(startIndex < (sizeof(recheckBitmap) * 8)) {
+      if((recheckBitmap & (1L << startIndex)) > 0 ) {
+        shouldCallIsPacket = false;
+      }
+    }
+    
+    // if(shouldCallIsPacket && this->filter != nullptr) {
+    //   if(
+    //     this->filter->isEnabled()
+    //   ) {
+    //     if(startIndex + this->filterLookAhead >= lastBusAvailable) {
+    //       return false; // We don't have enough bytes to call this filter
+    //     }
+
+    //     shouldCallIsPacket = filter->preFilter(*bus, startIndex);
+    //   }
+    // }
+
+    if(! shouldCallIsPacket) {
+      rejectByte(startIndex);
+      continue;
+    }
+
+    IsPacketResult result = protocol->isPacket(*bus, startIndex, lastBusAvailable - 1);
+
+    if(result.status == PacketStatus::NO) {
+      rejectByte(startIndex);
+    }
+    else if(result.status == PacketStatus::YES) {
+      endIndex = startIndex + result.packetLength - 1;
+
+      // Clear out all bytes before startIndex
+      while(startIndex > 0) {
+        eatOneByte();
+      }
+
+      // if(
+      //   this->filter != nullptr &&
+      //   this->filter->isEnabled() &&
+      //   ! this->filter->postFilter(*bus, startIndex, endIndex)
+      // ) {
+      //   clearPacket();
+
+      //   /**
+      //    * Things are in a weird state right now, which would normally be fixed when a packet is found
+      //    * because the consumer would be calling hasPacket again. Instead, we break out of this inner
+      //    * loop and claim we didn't find a packet. The downside to this is that without filtering,
+      //    * hasPacket may search the entire bus before checking the timeout. This will check it after
+      //    * every packet. It's the same behavior as the consumer filtering out their own packets, but
+      //    * it may cause some confusion.
+      //    */
+      //   return false;
+      // }
 
       return true;
     }

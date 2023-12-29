@@ -475,31 +475,17 @@ TEST_F(RS485BusTest, write_when_buffer_becomes_full_but_no_more_is_available) {
   EXPECT_EQ(-1, bus2[2]);
 }
 
-TEST_F(RS485BusTest, read_calls_fetch) {
+TEST_F(RS485BusTest, read_does_not_fetch) {
   busIO << 1 << 2 << 3;
 
   // We haven't called fetch internally
   EXPECT_EQ(0, bus8.available());
 
-  EXPECT_EQ(1, bus8.read());
-  EXPECT_EQ(2, bus8.available());
-
-  EXPECT_EQ(2, bus8.read());
-  EXPECT_EQ(1, bus8.available());
-
-  EXPECT_EQ(3, bus8.read());
-  EXPECT_EQ(0, bus8.available());
-
   EXPECT_EQ(-1, bus8.read());
   EXPECT_EQ(0, bus8.available());
-}
-
-TEST_F(RS485BusTest, read_fetches_even_if_not_all_bytes_have_been_read) {
-  busIO << 1;
 
   bus8.fetch();
-  busIO << 2 << 3;
-  EXPECT_EQ(1, bus8.available());
+  EXPECT_EQ(3, bus8.available());
 
   EXPECT_EQ(1, bus8.read());
   EXPECT_EQ(2, bus8.available());

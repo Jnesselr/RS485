@@ -42,7 +42,10 @@ public:
   explicit Packetizer(RS485BusBase& bus, const Protocol& protocol);
 
   // Fetch bytes from the bus and see if a packet is available based on the Protocol.
-  bool hasPacket();
+  //bool hasPacket();
+
+  // Check if the bytes on the bus currently form a packet based on the Protocol.
+  bool hasPacketNow();
 
   // Get the packet start/end index. 0 for both if no packet is available.
   Packet getPacket();
