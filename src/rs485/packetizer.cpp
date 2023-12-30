@@ -1,4 +1,6 @@
 #include "rs485/packetizer.h"
+#include <gtest/gtest.h>
+#include <gtest/gtest-message.h>
 
 Packetizer::Packetizer(RS485BusBase& bus, const Protocol& protocol):
 bus(&bus),  protocol(&protocol) {}
@@ -141,19 +143,23 @@ bool Packetizer::hasPacketInnerLoop() {
 }
 
 bool Packetizer::hasPacketNow() {
-  if(endIndex > 0) {
+  if(endIndex > 0 && !shouldRecheck) {
     return true;  // We have a packet already, no need to do any searching
   }
 
   size_t currentBusAvailable = bus->available();
 
-  if(lastBusAvailable == currentBusAvailable) {
-    return false;  // Don't bother rechecking our bus, we have the same number of bytes to work with.
+  if(lastBusAvailable == currentBusAvailable && !shouldRecheck) {
+    // ADD_FAILURE() << "No rechecky for you";
+    return false;  // Don't bother rechecking our bus, we have the same number of bytes to work with and aren't forcing a recheck
   }
 
   lastBusAvailable = currentBusAvailable;
 
+  shouldRecheck = false; // We assume we don't need to force recheck next time, even if we did this time.
+
   for(startIndex = 0; startIndex < lastBusAvailable; startIndex++) {
+    // ADD_FAILURE() << "Loop: (" << startIndex << ", " << (lastBusAvailable - 1) << ")";
     bool shouldCallIsPacket = true;
     
     if(startIndex < (sizeof(recheckBitmap) * 8)) {
@@ -162,17 +168,14 @@ bool Packetizer::hasPacketNow() {
       }
     }
     
-    // if(shouldCallIsPacket && this->filter != nullptr) {
-    //   if(
-    //     this->filter->isEnabled()
-    //   ) {
-    //     if(startIndex + this->filterLookAhead >= lastBusAvailable) {
-    //       return false; // We don't have enough bytes to call this filter
-    //     }
+    if(shouldCallIsPacket && this->filter != nullptr && this->filter->isEnabled()) {
+      if(startIndex + this->filterLookAhead >= lastBusAvailable) {
+        // ADD_FAILURE() << "Pre filtered out!";
+        return false; // We don't have enough bytes to call this filter and no further bytes will either
+      }
 
-    //     shouldCallIsPacket = filter->preFilter(*bus, startIndex);
-    //   }
-    // }
+      shouldCallIsPacket = filter->preFilter(*bus, startIndex);
+    }
 
     if(! shouldCallIsPacket) {
       rejectByte(startIndex);
@@ -186,29 +189,26 @@ bool Packetizer::hasPacketNow() {
     }
     else if(result.status == PacketStatus::YES) {
       endIndex = startIndex + result.packetLength - 1;
+      // ADD_FAILURE() << "Found a packet: (" << startIndex << ", " << endIndex << ")";
 
-      // Clear out all bytes before startIndex
+      // Clear out all bytes before startIndex (TODO This wil mess up our wait timer)
       while(startIndex > 0) {
         eatOneByte();
       }
 
-      // if(
-      //   this->filter != nullptr &&
-      //   this->filter->isEnabled() &&
-      //   ! this->filter->postFilter(*bus, startIndex, endIndex)
-      // ) {
-      //   clearPacket();
+      if(
+        this->filter != nullptr &&
+        this->filter->isEnabled() &&
+        ! this->filter->postFilter(*bus, startIndex, endIndex)
+      ) {
+        clearPacket();  // We have a packet, we just don't want it.
+        // ADD_FAILURE() << "Filtered out! Remaining bus available() " << bus->available() << " start index  " << startIndex;
+        startIndex = -1; // We need it to wrap around to 0 after incrementing
 
-      //   /**
-      //    * Things are in a weird state right now, which would normally be fixed when a packet is found
-      //    * because the consumer would be calling hasPacket again. Instead, we break out of this inner
-      //    * loop and claim we didn't find a packet. The downside to this is that without filtering,
-      //    * hasPacket may search the entire bus before checking the timeout. This will check it after
-      //    * every packet. It's the same behavior as the consumer filtering out their own packets, but
-      //    * it may cause some confusion.
-      //    */
-      //   return false;
-      // }
+        continue;  // We may still have another valid packet, so continue checking.
+      }
+
+      // ADD_FAILURE() << "Not filtered out!";
 
       return true;
     }
@@ -220,6 +220,7 @@ bool Packetizer::hasPacketNow() {
     }
   }
 
+  // ADD_FAILURE() << "Awww, we got to the end";
   return false;
 }
 
@@ -245,10 +246,10 @@ void Packetizer::clearPacket() {
   while(endIndex != 0) {
     eatOneByte();
   }
-  eatOneByte();  // endIndex will be 0 with one byte after the previous loop
+  eatOneByte();  // endIndex will be 0 with one byte remaining to eat after the previous loop
 
-  // Since nothing after our packet got checked, we reset this to 0 so it forcefully check new data
-  lastBusAvailable = 0;
+  startIndex = 0;  // Force start index to zero since eating the bytes probably wrapped it around to a very large value.
+  shouldRecheck = true;
 }
 
 void Packetizer::setMaxReadTimeout(TimeMicroseconds_t maxReadTimeout) {

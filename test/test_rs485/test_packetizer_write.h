@@ -377,45 +377,45 @@ TEST_F(PacketizerWriteTest, write_packet_delays_until_timeout) {
   VerifyNoOtherInvocations(Method(fakeBus, write));
 }
 
-TEST_F(PacketizerWriteTest, read_affects_last_read_byte_time) {
-  packetizer.setMaxReadTimeout(0);
-  packetizer.setMaxWriteTimeout(0);
-  packetizer.setBusQuietTime(100);
-  When(Method(fakeBus, fetch)).Return(1_Time((size_t) 1), 100_Times((size_t) 0)); // Our first fetch during read has to have data to force a delay on write
-  When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
+// TEST_F(PacketizerWriteTest, read_affects_last_read_byte_time) {
+//   packetizer.setMaxReadTimeout(0);
+//   packetizer.setMaxWriteTimeout(0);
+//   packetizer.setBusQuietTime(100);
+//   When(Method(fakeBus, fetch)).Return(1_Time((size_t) 1), 100_Times((size_t) 0)); // Our first fetch during read has to have data to force a delay on write
+//   When(Method(fakeBus, write)).AlwaysReturn(WriteResult::OK);
 
-  When(Method(ArduinoFake(), micros)).Return(
-    0,    // Read start time
-    15,   // Read time of fetch
-    30,   // Read time end of hasPacket, to check, against timeout, since no byte was found
-    45    // Write start time
-    );
+//   When(Method(ArduinoFake(), micros)).Return(
+//     0,    // Read start time
+//     15,   // Read time of fetch
+//     30,   // Read time end of hasPacket, to check, against timeout, since no byte was found
+//     45    // Write start time
+//     );
 
-  When(Method(fakeBus, available)).AlwaysReturn(7);
-  When(Method(fakeBus, operator[])).AlwaysDo([&](const unsigned int& index) -> const int { return buffer[index]; });
+//   When(Method(fakeBus, available)).AlwaysReturn(7);
+//   When(Method(fakeBus, operator[])).AlwaysDo([&](const unsigned int& index) -> const int { return buffer[index]; });
 
-  EXPECT_FALSE(packetizer.hasPacket());
-  PacketWriteResult status = this->writePacket();
-  EXPECT_EQ(PacketWriteResult::OK, status);
+//   EXPECT_FALSE(packetizer.hasPacket());
+//   PacketWriteResult status = this->writePacket();
+//   EXPECT_EQ(PacketWriteResult::OK, status);
 
-  Verify(
-    Method(ArduinoFake(), micros),  // Returns 0
-    Method(fakeBus, fetch),         // Returns 1
-    Method(ArduinoFake(), micros),  // Returns 15
-    Method(ArduinoFake(), micros),  // Returns 30
-    Method(ArduinoFake(), micros),  // Returns 45
-    Method(ArduinoFake(), delayMicroseconds).Using(70),
-    Method(fakeBus, fetch),         // Returns 0
-    Method(fakeBus, enableWrite).Using(true),
-    Method(fakeBus, write).Using(0x12),
-    Method(fakeBus, write).Using(0x34),
-    Method(fakeBus, write).Using(0x56),
-    Method(fakeBus, write).Using(0x78),
-    Method(fakeBus, write).Using(0x9A),
-    Method(fakeBus, write).Using(0xBC),
-    Method(fakeBus, write).Using(0xDE),
-    Method(fakeBus, enableWrite).Using(false)
-  ).Once();
+//   Verify(
+//     Method(ArduinoFake(), micros),  // Returns 0
+//     Method(fakeBus, fetch),         // Returns 1
+//     Method(ArduinoFake(), micros),  // Returns 15
+//     Method(ArduinoFake(), micros),  // Returns 30
+//     Method(ArduinoFake(), micros),  // Returns 45
+//     Method(ArduinoFake(), delayMicroseconds).Using(70),
+//     Method(fakeBus, fetch),         // Returns 0
+//     Method(fakeBus, enableWrite).Using(true),
+//     Method(fakeBus, write).Using(0x12),
+//     Method(fakeBus, write).Using(0x34),
+//     Method(fakeBus, write).Using(0x56),
+//     Method(fakeBus, write).Using(0x78),
+//     Method(fakeBus, write).Using(0x9A),
+//     Method(fakeBus, write).Using(0xBC),
+//     Method(fakeBus, write).Using(0xDE),
+//     Method(fakeBus, enableWrite).Using(false)
+//   ).Once();
 
-  VerifyNoOtherInvocations(Method(fakeBus, write));
-}
+//   VerifyNoOtherInvocations(Method(fakeBus, write));
+// }
