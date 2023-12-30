@@ -149,7 +149,6 @@ bool Packetizer::hasPacketNow() {
     if(endIndex > 0) {
       return true; // We do have a packet and no extra bytes so no need to check again for a packet
     }
-    // ADD_FAILURE() << "No rechecky for you";
     return false;  // Don't bother rechecking our bus, we have the same number of bytes to work with and aren't forcing a recheck
   }
 
@@ -159,7 +158,6 @@ bool Packetizer::hasPacketNow() {
   endIndex = 0; // If we had a packet, we can find it again
 
   for(startIndex = 0; startIndex < lastBusAvailable; startIndex++) {
-    // ADD_FAILURE() << "Loop: (" << startIndex << ", " << (lastBusAvailable - 1) << ")";
     bool shouldCallIsPacket = true;
     
     if(startIndex < (sizeof(recheckBitmap) * 8)) {
@@ -170,7 +168,6 @@ bool Packetizer::hasPacketNow() {
     
     if(shouldCallIsPacket && this->filter != nullptr && this->filter->isEnabled()) {
       if(startIndex + this->filterLookAhead >= lastBusAvailable) {
-        // ADD_FAILURE() << "Pre filtered out!";
         return false; // We don't have enough bytes to call this filter and no further bytes will either
       }
 
@@ -189,9 +186,6 @@ bool Packetizer::hasPacketNow() {
     }
     else if(result.status == PacketStatus::YES) {
       endIndex = startIndex + result.packetLength - 1;
-      // ADD_FAILURE() << "Found a packet: (" << startIndex << ", " << endIndex << ")";
-
-      // Clear out all bytes before startIndex (TODO This wil mess up our wait timer)
 
       if(
         this->filter != nullptr &&
@@ -199,13 +193,10 @@ bool Packetizer::hasPacketNow() {
         ! this->filter->postFilter(*bus, startIndex, endIndex)
       ) {
         clearPacket();  // We have a packet, we just don't want it.
-        // ADD_FAILURE() << "Filtered out! Remaining bus available() " << bus->available() << " start index  " << startIndex;
         startIndex = -1; // We need it to wrap around to 0 after incrementing
 
         continue;  // We may still have another valid packet, so continue checking.
       }
-
-      // ADD_FAILURE() << "Not filtered out!";
 
       return true;
     }
@@ -217,7 +208,6 @@ bool Packetizer::hasPacketNow() {
     }
   }
 
-  // ADD_FAILURE() << "Awww, we got to the end";
   return false;
 }
 
