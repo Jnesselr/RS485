@@ -106,7 +106,7 @@ TEST_F(PacketizerReadBusTest, can_get_simple_packet) {
   ASSERT_TRUE(packetizer.hasPacketNow());
   expectPacket(0, 2);
 
-  ASSERT_EQ(4, bus.available()); // The first byte wasn't part of the packet, it was discarded
+  ASSERT_EQ(4, bus.available()); // The first byte wasn't part of the packet and is a "no" so is discarded
   EXPECT_EQ(0x02, bus[0]);
   EXPECT_EQ(0x03, bus[1]);
   EXPECT_EQ(0x02, bus[2]);
@@ -198,8 +198,8 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
 
   // Call our hasPacketNow method to use our protocol to find a packet
   ASSERT_TRUE(packetizer.hasPacketNow());
-  expectPacket(0, 2);  // [(ul64Size - 2), (ul64Size - 1), (ul64Size - 2)] is our packet
-  ASSERT_EQ(5, bus.available());  // Everything else got cleared out but the packet and our two extra bytes
+  expectPacket(validPacketByte, validPacketByte + 2);  // [(ul64Size - 2), (ul64Size - 1), (ul64Size - 2)] is our packet
+  ASSERT_EQ(u64Size + 3, bus.available());  // Everything else got cleared out but the packet and our two extra bytes
 
   // And finally, verify the is packet calls were only called on the even "not enough bytes" numbers and NEVER on the odd values because they returned "no"
   for(size_t i = 0; i < u64Size; i++) {
@@ -217,8 +217,8 @@ TEST_F(PacketizerReadBusBigTest, no_bytes_do_not_get_tested_again) {
 
   // Call our hasPacketNow method just to verify it lets us know it has a packet without the call to isPacket
   ASSERT_TRUE(packetizer.hasPacketNow());
-  expectPacket(0, 2);  // Same packet as above
-  ASSERT_EQ(5, bus.available());  // [(ul64Size - 2), (ul64Size - 1), (ul64Size - 2), (ul64Size + 1), (ul64Size + 2)] is our bus
+  expectPacket(validPacketByte, validPacketByte + 2);  // Same packet as above
+  ASSERT_EQ(u64Size + 3, bus.available());  // [(ul64Size - 2), (ul64Size - 1), (ul64Size - 2), (ul64Size + 1), (ul64Size + 2)] is our bus
 
   // Verify nothing was called, meaning the packetizer cached the reuslt from last time
   VerifyNoOtherInvocations(Method(protocolSpy, isPacket));
@@ -375,6 +375,35 @@ TEST_F(PacketizerReadBus3Test, can_get_packet_even_if_it_is_past_bus_size_if_byt
   expectNoPacket();
   EXPECT_EQ(0, bus.available());
   EXPECT_EQ(-1, bus[0]);
+}
+
+TEST_F(PacketizerReadBusTest, has_packet_now_returns_outer_packet_if_new_bytes_are_available) {
+  busIO << 0x08 << 0x02 << 0x02;
+
+  bus.fetch();  // Fetch so we can check if our bus has a packet right now
+
+  ASSERT_EQ(3, bus.available());
+
+  ASSERT_TRUE(packetizer.hasPacketNow());
+  expectPacket(1, 2);
+
+  ASSERT_EQ(3, bus.available()); // The first byte wasn't part of the packet, but it's a "not enough bytes" so it's kept just in case
+  EXPECT_EQ(0x08, bus[0]);
+  EXPECT_EQ(0x02, bus[1]);
+  EXPECT_EQ(0x02, bus[2]);
+  EXPECT_EQ(-1, bus[3]);
+
+  busIO << 0x08;  // This matches our 0x08 "not enough bytes" at the beginning of the buffer
+  bus.fetch();
+  ASSERT_TRUE(packetizer.hasPacketNow());
+  expectPacket(0, 3);
+
+  packetizer.clearPacket();
+
+  ASSERT_FALSE(packetizer.hasPacketNow());
+  expectNoPacket();
+  ASSERT_EQ(0, bus.available());
+  EXPECT_EQ(-1, bus[1]);
 }
 
 //  --- DEMARC

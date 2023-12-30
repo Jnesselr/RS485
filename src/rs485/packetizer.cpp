@@ -143,13 +143,12 @@ bool Packetizer::hasPacketInnerLoop() {
 }
 
 bool Packetizer::hasPacketNow() {
-  if(endIndex > 0 && !shouldRecheck) {
-    return true;  // We have a packet already, no need to do any searching
-  }
-
   size_t currentBusAvailable = bus->available();
 
   if(lastBusAvailable == currentBusAvailable && !shouldRecheck) {
+    if(endIndex > 0) {
+      return true; // We do have a packet and no extra bytes so no need to check again for a packet
+    }
     // ADD_FAILURE() << "No rechecky for you";
     return false;  // Don't bother rechecking our bus, we have the same number of bytes to work with and aren't forcing a recheck
   }
@@ -157,6 +156,7 @@ bool Packetizer::hasPacketNow() {
   lastBusAvailable = currentBusAvailable;
 
   shouldRecheck = false; // We assume we don't need to force recheck next time, even if we did this time.
+  endIndex = 0; // If we had a packet, we can find it again
 
   for(startIndex = 0; startIndex < lastBusAvailable; startIndex++) {
     // ADD_FAILURE() << "Loop: (" << startIndex << ", " << (lastBusAvailable - 1) << ")";
@@ -192,9 +192,6 @@ bool Packetizer::hasPacketNow() {
       // ADD_FAILURE() << "Found a packet: (" << startIndex << ", " << endIndex << ")";
 
       // Clear out all bytes before startIndex (TODO This wil mess up our wait timer)
-      while(startIndex > 0) {
-        eatOneByte();
-      }
 
       if(
         this->filter != nullptr &&

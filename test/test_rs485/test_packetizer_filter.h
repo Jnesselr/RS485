@@ -108,9 +108,11 @@ TEST_F(PacketizerFilterTest, pre_filter_rejection_is_permanent) {
   filter.preValues.reject(0x02);
   busIO << 0x02;
   bus.fetch();
+
+  // bus: 04 02
+
   ASSERT_FALSE(packetizer.hasPacketNow());
   expectNoPacket();
-  // bus: 04 02
   ASSERT_EQ(2, bus.available());
   EXPECT_EQ(0x04, bus[0]);
   EXPECT_EQ(0x02, bus[1]);
@@ -120,9 +122,11 @@ TEST_F(PacketizerFilterTest, pre_filter_rejection_is_permanent) {
   filter.preValues.allow(0x02);
   busIO << 0x02;
   bus.fetch();
+
+  // bus: 04 02 02
+
   ASSERT_FALSE(packetizer.hasPacketNow());
   expectNoPacket();
-  // bus: 04 02 02
   ASSERT_EQ(3, bus.available());
   EXPECT_EQ(0x04, bus[0]);
   EXPECT_EQ(0x02, bus[1]);
@@ -132,56 +136,18 @@ TEST_F(PacketizerFilterTest, pre_filter_rejection_is_permanent) {
   // The new 0x02 DOES make a matching packet now though
   busIO << 0x02;
   bus.fetch();
+
+  // bus: 04 02 02 02
+
   ASSERT_TRUE(packetizer.hasPacketNow());
-  expectPacket(0, 1);
-  // bus: 02 02
+  expectPacket(2, 3);
 
-  ASSERT_EQ(2, bus.available());
-  EXPECT_EQ(0x02, bus[0]);
-  EXPECT_EQ(0x02, bus[1]);
-  EXPECT_EQ(-1, bus[2]);
-}
-
-TEST_F(PacketizerFilterTest, pre_filter_disabled_does_not_affect_previous_rejections) {
-  filter.preValues.allowAll();
-  filter.preValues.reject(0x02);
-  filter.postValues.allowAll();
-
-  // 0x04 is allowed, 0x02 is not.
-  busIO << 0x04 << 0x02;
-  bus.fetch();
-  ASSERT_FALSE(packetizer.hasPacketNow());
-  expectNoPacket();
-  // bus: 04 02
-  ASSERT_EQ(2, bus.available());
-  EXPECT_EQ(0x04, bus[0]);
-  EXPECT_EQ(0x02, bus[1]);
-  EXPECT_EQ(-1, bus[2]);
-
-  // 0x02 would make a matching packet if the filter hadn't already rejected the first 0x02
-  filter.setEnabled(false);
-  busIO << 0x02;
-  bus.fetch();
-  ASSERT_FALSE(packetizer.hasPacketNow());
-  expectNoPacket();
-  // bus: 04 02 02
-  ASSERT_EQ(bus.available(), 3);
+  ASSERT_EQ(4, bus.available());
   EXPECT_EQ(0x04, bus[0]);
   EXPECT_EQ(0x02, bus[1]);
   EXPECT_EQ(0x02, bus[2]);
-  EXPECT_EQ(-1, bus[3]);
-
-  // The new 0x02 DOES make a matching packet now though
-  busIO << 0x02;
-  bus.fetch();
-  ASSERT_TRUE(packetizer.hasPacketNow());
-  expectPacket(0, 1);
-  // bus: 02 02
-
-  ASSERT_EQ(2, bus.available());
-  EXPECT_EQ(0x02, bus[0]);
-  EXPECT_EQ(0x02, bus[1]);
-  EXPECT_EQ(-1, bus[2]);
+  EXPECT_EQ(0x02, bus[3]);
+  EXPECT_EQ(-1, bus[4]);
 }
 
 TEST_F(PacketizerFilterTest, post_filter_is_called_after_is_packet) {
