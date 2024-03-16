@@ -155,23 +155,36 @@ TEST_F(PacketizerFilterTest, post_filter_is_called_after_is_packet) {
   filter.postValues.allow(0x03);
   filter.postValues.allow(0x05);
 
-  busIO << 0x01 << 0x01 << 0x02 << 0x02 << 0x03 << 0x03 << 0x04 << 0x04 << 0x05 << 0x05 << 0x06 << 0x06 << 0x07 << 0x07;
+  // This buffer makes it so we don't remove any bytes at the beginning, we have a valid but filtered out packet before our
+  // valid and allowed packet value. We do the same thing with putting an unmatched 0x04 before our allowed 0x05 packet.
+  busIO << 0x00 << 0x02 << 0x02 << 0x03 << 0x03 << 0x04 << 0x05 << 0x05 << 0x06 << 0x07 << 0x07;
   bus.fetch();
   
   ASSERT_TRUE(packetizer.hasPacketNow());
-  expectPacket(0, 1);
-  ASSERT_GT(bus.available(), 2);  // We don't care what anything else past this is at the moment, we just care about our packet
-  EXPECT_EQ(0x03, bus[0]);
-  EXPECT_EQ(0x03, bus[1]);
+  expectPacket(3, 4);  // 0x03 - 0x03
+  ASSERT_EQ(11, bus.available());
+  EXPECT_EQ(0x00, bus[0]);
+  EXPECT_EQ(0x02, bus[1]);
+  EXPECT_EQ(0x02, bus[2]);
+  EXPECT_EQ(0x03, bus[3]);  // Packet start
+  EXPECT_EQ(0x03, bus[4]);  // Packet end
+  EXPECT_EQ(0x04, bus[5]);
+  EXPECT_EQ(0x05, bus[6]);
+  EXPECT_EQ(0x05, bus[7]);
+  EXPECT_EQ(0x06, bus[8]);
+  EXPECT_EQ(0x07, bus[9]);
+  EXPECT_EQ(0x07, bus[10]);
+  EXPECT_EQ(-1, bus[11]);
 
   packetizer.clearPacket();
 
   ASSERT_TRUE(packetizer.hasPacketNow());
-  expectPacket(0, 1);
+
+  expectPacket(1, 2);
   ASSERT_EQ(6, bus.available());
-  EXPECT_EQ(0x05, bus[0]);
-  EXPECT_EQ(0x05, bus[1]);
-  EXPECT_EQ(0x06, bus[2]);
+  EXPECT_EQ(0x04, bus[0]);
+  EXPECT_EQ(0x05, bus[1]);  // Packet start
+  EXPECT_EQ(0x05, bus[2]);  // Packet end
   EXPECT_EQ(0x06, bus[3]);
   EXPECT_EQ(0x07, bus[4]);
   EXPECT_EQ(0x07, bus[5]);
@@ -179,9 +192,14 @@ TEST_F(PacketizerFilterTest, post_filter_is_called_after_is_packet) {
 
   packetizer.clearPacket();
 
-  ASSERT_FALSE(packetizer.hasPacketNow());  // This will have wiped away everything else
+  ASSERT_FALSE(packetizer.hasPacketNow());
+
   expectNoPacket();
-  EXPECT_EQ(0, bus.available());
+  ASSERT_EQ(3, bus.available());
+  EXPECT_EQ(0x06, bus[0]);
+  EXPECT_EQ(0x07, bus[1]);
+  EXPECT_EQ(0x07, bus[2]);
+  EXPECT_EQ(-1, bus[3]);
 }
 
 TEST_F(PacketizerFilterTest, post_filter_is_ignored_if_filter_is_disabled) {
@@ -215,4 +233,42 @@ TEST_F(PacketizerFilterTest, post_filter_is_ignored_if_filter_is_disabled) {
   ASSERT_FALSE(packetizer.hasPacketNow());  // This will have wiped away everything else
   expectNoPacket();
   EXPECT_EQ(0, bus.available());
+}
+
+TEST_F(PacketizerFilterTest, post_filter_eats_packets_if_they_are_filtered_and_are_at_the_start) {
+  /*
+  This test writes paired values so they are all packets. The "no" and "not enough bytes" semantics therefore don't apply. We write many packet values out but only allow a packet
+  value that is beyond our initial buffer. When we call hasPacketNow, what we expect to see is that all our packets get filtered out and our buffer gets completely cleared out
+  because every single packet that's filtered out is aligned to the start.
+  */
+
+  uint8_t lastValue = bus.bufferSize() / 2;  // Assumes even buffer.
+  filter.preValues.allowAll();
+  filter.postValues.allow(lastValue);
+
+  for (size_t i = 0; i <= lastValue; i++)
+  {
+    busIO << i << i;  // Write two bytes at a time to always get a valid packet.
+  }
+
+  ASSERT_EQ((lastValue + 1) * 2, busIO.available());
+
+  // At this point, we have a bus that looks like: 00 00 01 01 02 02 03 03 ... 1F 1F 20 20
+  // Only 0x00 through 0x1F are able to be fetched at first.
+
+  bus.fetch();
+
+  ASSERT_TRUE(bus.isBufferFull());
+
+  ASSERT_FALSE(packetizer.hasPacketNow());
+  ASSERT_EQ(0, bus.available());  // Everything got eaten. They were all valid packets, filtered out, that started at the 0 index
+
+  bus.fetch();  // Start of our allowed packet should now be index 0
+  ASSERT_EQ(2, bus.available());
+
+  ASSERT_TRUE(packetizer.hasPacketNow());
+  expectPacket(0, 1);
+  EXPECT_EQ(lastValue, bus[0]);
+  EXPECT_EQ(lastValue, bus[1]);
+  EXPECT_EQ(-1, bus[2]);
 }

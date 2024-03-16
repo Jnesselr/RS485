@@ -71,8 +71,6 @@ public:
   // Remove a filter from this packetizer
   void removeFilter();
 private:
-  bool hasPacketInnerLoop();
-
   size_t fetchFromBus();
   inline void eatOneByte();
   inline void rejectByte(size_t location);
