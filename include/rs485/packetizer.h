@@ -40,24 +40,33 @@ struct Packet {
 class Packetizer {
 public:
   explicit Packetizer(RS485BusBase& bus, const Protocol& protocol);
+  virtual ~Packetizer() {}
 
   // Fetch bytes from the bus and see if a packet is available based on the Protocol.
-  //bool hasPacket();
+  bool hasPacket();
 
   // Check if the bytes on the bus currently form a packet based on the Protocol.
-  bool hasPacketNow();
+  virtual bool hasPacketNow();
 
   // Get the packet start/end index. 0 for both if no packet is available.
   Packet getPacket();
 
-  // Clear the packet. If a packet is found, further calls to hasPacket will return true until this method is called.
+  // Clear the packet after the user has used the data.
   void clearPacket();
 
   /**
-   * How long to keep trying to keep trying to read a packet. If no new data is available, this value is irrelevent.
-   * If this is too high and the bus is constantly receiving new data, then hasPacket will block.
+   * How long to keep trying to read a packet. If no new data is available, this value is irrelevent. This value is
+   * from the beginning of the call to hasPacket, so at some point it will give up even if it continues to read new
+   * bytes.
    */
   void setMaxReadTimeout(TimeMicroseconds_t maxReadTimeout);
+
+  /**
+   * If a packet is found but it's not at the beginning of the bus, there's a chance it's an invalid packet inside of
+   * another larger packet. This is how long to wait after finding one of these packets before assuming that's the only
+   * packet. This timeout happens each time a new packet is found unless it's found at the start of the bus.
+  */
+  void setFalsePacketVerificationTimeout(TimeMicroseconds_t falsePacketVerificationTimeout);
 
   PacketWriteResult writePacket(const uint8_t* buffer, size_t bufferSize);
   
@@ -70,8 +79,8 @@ public:
   void setFilter(const Filter& filter);
   // Remove a filter from this packetizer
   void removeFilter();
-private:
-  size_t fetchFromBus();
+protected:
+  virtual size_t fetchFromBus();
   inline void eatOneByte();
   inline void rejectByte(size_t location);
 
@@ -89,7 +98,8 @@ private:
 
   TimeMicroseconds_t maxReadTimeout = -1;
   TimeMicroseconds_t maxWriteTimeout = -1;
+  TimeMicroseconds_t busQuietTime = 0;  // How long the bus needs to go without fetching a byte before we can write a new byte
 
   TimeMicroseconds_t lastByteReadTimestamp = 0;  // Last time any bytes were known to be fetched
-  TimeMicroseconds_t busQuietTime = 0;  // How long the bus needs to go without fetching a byte
+  TimeMicroseconds_t falsePacketVerificationTimeout = 0;
 };

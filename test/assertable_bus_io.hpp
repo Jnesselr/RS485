@@ -47,7 +47,8 @@ AssertableBusIO& AssertableBusIO::readable(std::array<uint8_t, bufferSize> reada
 }
 
 AssertableBusIO::AssertableBusIO() {
-
+  memset(buffer, 0, sizeof(uint8_t) * sizeof(buffer));
+  memset(writtenBuffer, 0, sizeof(uint8_t) * sizeof(writtenBuffer));
 }
 
 size_t AssertableBusIO::available() {

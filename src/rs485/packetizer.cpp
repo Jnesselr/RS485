@@ -71,8 +71,58 @@ bool Packetizer::hasPacket() {
 }
 */
 
+bool Packetizer::hasPacket() {
+  TimeMicroseconds_t functionStartTime = micros();
+  TimeMicroseconds_t lastPacketTime = functionStartTime;
+
+  boolean hasPacket = hasPacketNow();
+
+  while(true) {
+    if(hasPacket and startIndex == 0) {
+      return true;  // We have a packet aligned to the start of our bus, return it immediately.
+    }
+
+    fetchFromBus();
+
+    size_t currentBusAvailable = bus->available();
+    TimeMicroseconds_t currentTime = micros();
+
+    if (lastBusAvailable == currentBusAvailable) {
+      if(! hasPacket) {
+        return false;  // If we have no new bytes and don't have a packet, exit early to be nice to the calling function.
+      }
+
+      // We do have a packet here
+      if(falsePacketVerificationTimeout == 0) {  // We won't bother checking for any other packets
+        return true;
+      }
+      TimeMicroseconds_t timeSinceLastPacket = currentTime - lastPacketTime;
+      if(timeSinceLastPacket > falsePacketVerificationTimeout) {
+        return true;
+      } else {
+        continue;  // No new bytes to check but we don't want time out just yet
+      }
+    }
+
+    // We have new bytes
+    TimeMicroseconds_t timeSinceFunctionStart = currentTime - functionStartTime;
+    if(timeSinceFunctionStart > maxReadTimeout) {
+      return hasPacket;  // Whatever we've found so far, we're letting the caller know about it
+    }
+
+    size_t oldStartIndex = startIndex;
+    hasPacket = hasPacketNow();
+
+    if(hasPacket && oldStartIndex != startIndex) {  // We have a new packet
+      lastPacketTime = micros();
+    }
+  }
+}
+
 bool Packetizer::hasPacketNow() {
   size_t currentBusAvailable = bus->available();
+
+  std::cout << "last vs current: " << lastBusAvailable << " " << currentBusAvailable << std::endl;
 
   if(lastBusAvailable == currentBusAvailable && !shouldRecheck) {
     if(endIndex > 0) {
@@ -109,6 +159,20 @@ bool Packetizer::hasPacketNow() {
     }
 
     IsPacketResult result = protocol->isPacket(*bus, startIndex, lastBusAvailable - 1);
+    std::string status;
+    switch(result.status) {
+      case PacketStatus::NO:
+      status = "No";
+      break;
+      case PacketStatus::NOT_ENOUGH_BYTES:
+      status = "Not Enough Bytes";
+      break;
+      case PacketStatus::YES:
+      status = "Yes";
+      break;
+    }
+
+    std::cout << "is packet result (" << startIndex << ", " << lastBusAvailable - 1 << "): " << status << std::endl;
 
     if(result.status == PacketStatus::NO) {
       rejectByte(startIndex);
@@ -178,6 +242,10 @@ void Packetizer::clearPacket() {
 
 void Packetizer::setMaxReadTimeout(TimeMicroseconds_t maxReadTimeout) {
   this->maxReadTimeout = maxReadTimeout;
+}
+
+void Packetizer::setFalsePacketVerificationTimeout(TimeMicroseconds_t falsePacketVerificationTimeout) {
+  this->falsePacketVerificationTimeout = falsePacketVerificationTimeout;
 }
 
 PacketWriteResult Packetizer::writePacket(const uint8_t* buffer, size_t bufferSize) {

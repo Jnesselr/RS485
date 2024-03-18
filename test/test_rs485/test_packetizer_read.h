@@ -18,10 +18,6 @@ protected:
     protocolSpy(protocol) {};
 
   void SetUp() {
-    When(Method(ArduinoFake(), micros)).AlwaysDo([&]()->unsigned long{
-      currentMicros++;
-      return currentMicros;
-    });
     Spy(Method(protocolSpy, isPacket));
 
     ArduinoFake().ClearInvocationHistory();
@@ -41,7 +37,6 @@ protected:
     EXPECT_EQ(endIndex, packet.endIndex);
   }
 
-  volatile unsigned long currentMicros = 0;
   AssertableBusIO busIO;
   ProtocolMatchingBytes protocol;
   Mock<ProtocolMatchingBytes> protocolSpy;
@@ -52,7 +47,6 @@ protected:
   PacketizerReadBusTest(): PacketizerReadTest(),
     bus(busIO, readEnablePin, writeEnablePin),
     packetizer(bus, protocol) {
-      packetizer.setMaxReadTimeout(20);
     }
 
   virtual Packetizer* getPacketizer() { return &packetizer; }
@@ -66,7 +60,6 @@ protected:
   PacketizerReadBus3Test(): PacketizerReadTest(),
     bus(busIO, readEnablePin, writeEnablePin),
     packetizer(bus, protocol) {
-      packetizer.setMaxReadTimeout(20);
     }
 
   virtual Packetizer* getPacketizer() { return &packetizer; }
@@ -80,7 +73,6 @@ protected:
   PacketizerReadBusBigTest(): PacketizerReadTest(),
     bus(busIO, readEnablePin, writeEnablePin),
     packetizer(bus, protocol) {
-      packetizer.setMaxReadTimeout(20);
     }
 
   virtual Packetizer* getPacketizer() { return &packetizer; }
