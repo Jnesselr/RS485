@@ -26,7 +26,8 @@ struct Packet {
  * Packetizer packetizer(bus, protocol);
  * while(true) {
  *   if(packetizer.hasPacket()) {
- *     // bus[0] to bus[packetizer.packetLength() - 1] is your packet. Do with it what you need to.
+ *     Packet packet = packetizer.getPacket();
+ *     // bus[packet.startIndex] to bus[packet.endIndex] is your packet. Do with it what you need to.
  *     // Clear the packet out so the next one can be read when hasPacket is next called.
  *     packetizer.clearPacket();
  *   }
