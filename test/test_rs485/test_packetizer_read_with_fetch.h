@@ -117,24 +117,17 @@ protected:
 private:
   void fetchFromBusCallback() {
     currentMicros++;
-    std::cout << std::endl;
-    std::cout << "fetch from bus callback at " << currentMicros << std::endl;
-
-    std::cout << "micros to read: " << microsToReadData[microsReadIndex] << std::endl;
 
     if(currentMicros != microsToReadData[microsReadIndex]) {
       return;
     }
 
     size_t bytesToReadIn = newReadableCounts[microsReadIndex];
-    std::cout << "bytes to read in (" << bytesToReadIn << "): ";
     for (size_t i = 0; i < bytesToReadIn; i++)
     {
-      std::cout << buffer[readBufferIndex] << " ";
       busIO << buffer[readBufferIndex];
       readBufferIndex++;
     }
-    std::cout << std::endl;
     bus.fetch();
 
     microsReadIndex++;

@@ -122,8 +122,6 @@ bool Packetizer::hasPacket() {
 bool Packetizer::hasPacketNow() {
   size_t currentBusAvailable = bus->available();
 
-  std::cout << "last vs current: " << lastBusAvailable << " " << currentBusAvailable << std::endl;
-
   if(lastBusAvailable == currentBusAvailable && !shouldRecheck) {
     if(endIndex > 0) {
       return true;  // We do have a packet and no extra bytes so no need to check again for a packet
@@ -159,20 +157,6 @@ bool Packetizer::hasPacketNow() {
     }
 
     IsPacketResult result = protocol->isPacket(*bus, startIndex, lastBusAvailable - 1);
-    std::string status;
-    switch(result.status) {
-      case PacketStatus::NO:
-      status = "No";
-      break;
-      case PacketStatus::NOT_ENOUGH_BYTES:
-      status = "Not Enough Bytes";
-      break;
-      case PacketStatus::YES:
-      status = "Yes";
-      break;
-    }
-
-    std::cout << "is packet result (" << startIndex << ", " << lastBusAvailable - 1 << "): " << status << std::endl;
 
     if(result.status == PacketStatus::NO) {
       rejectByte(startIndex);
