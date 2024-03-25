@@ -1,6 +1,4 @@
 #include "rs485/packetizer.h"
-#include <gtest/gtest.h>
-#include <gtest/gtest-message.h>
 
 Packetizer::Packetizer(RS485BusBase& bus, const Protocol& protocol):
 bus(&bus),  protocol(&protocol) {}
@@ -68,6 +66,7 @@ bool Packetizer::hasPacket() {
       if(falsePacketVerificationTimeout == 0) {  // We won't bother checking for any other packets
         return true;
       }
+
       TimeMicroseconds_t timeSinceLastPacket = currentTime - lastPacketTime;
       if(timeSinceLastPacket > falsePacketVerificationTimeout) {
         return true;
