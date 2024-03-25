@@ -142,13 +142,13 @@ private:
   unsigned char buffer[1024];  // Our buffer to read X bytes from
 };
 
-TEST_F(PacketizerReadWithFetchTest, max_read_timeout_does_not_matter_if_no_new_bytes_come_in) {
+TEST_F(PacketizerReadWithFetchTest, max_read_timeout_is_still_respected_even_if_no_new_bytes_come_in) {
     packetizer.setMaxReadTimeout(10);
 
     ASSERT_FALSE(packetizer.hasPacket());
     expectNoPacket();
 
-    ASSERT_EQ(1, currentMicros);  // Only 1 microsecond has passed
+    ASSERT_EQ(11, currentMicros);  // We hit our max read timeout
 
     Verify(Method(packetizerSpy, hasPacketNow)).Once();
 }
@@ -193,7 +193,7 @@ TEST_F(PacketizerReadWithFetchTest, false_read_timeout_does_not_matter_if_there_
     ASSERT_FALSE(packetizer.hasPacket());
     expectNoPacket();
 
-    ASSERT_EQ(1, currentMicros);  // Only 1 microsecond has passed
+    ASSERT_EQ(101, currentMicros);  // We hit our max read timeout
 
     Verify(Method(packetizerSpy, hasPacketNow)).Once();
 }

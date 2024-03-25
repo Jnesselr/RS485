@@ -38,39 +38,6 @@ void Packetizer::rejectByte(size_t location) {
   }
 }
 
-/**
-bool Packetizer::hasPacket() {
-  if(endIndex > 0) {
-    return true;  // We have a packet already, no need to do any searching
-  }
-
-  TimeMicroseconds_t startTime = micros();
-
-  while(true) {
-    fetchFromBus();
-
-    size_t currentBusAvailable = bus->available();
-
-    if(lastBusAvailable != currentBusAvailable) {
-      lastBusAvailable = currentBusAvailable;
-
-      bool packetFound = hasPacketInnerLoop();
-      if(packetFound) {
-        return true;
-      }
-    }
-
-    TimeMicroseconds_t currentTimeMs = micros();
-    
-    if((currentTimeMs - startTime) >= maxReadTimeout) {
-      return false;  // We timed out trying to read a valid packet
-    }
-  }
-
-  return false;
-}
-*/
-
 bool Packetizer::hasPacket() {
   TimeMicroseconds_t functionStartTime = micros();
   TimeMicroseconds_t lastPacketTime = functionStartTime;
@@ -87,9 +54,14 @@ bool Packetizer::hasPacket() {
     size_t currentBusAvailable = bus->available();
     TimeMicroseconds_t currentTime = micros();
 
+    TimeMicroseconds_t timeSinceFunctionStart = currentTime - functionStartTime;
+    if(timeSinceFunctionStart > maxReadTimeout) {
+      return hasPacket;  // Whatever we've found so far, we're letting the caller know about it
+    }
+
     if (lastBusAvailable == currentBusAvailable) {
       if(! hasPacket) {
-        return false;  // If we have no new bytes and don't have a packet, exit early to be nice to the calling function.
+        continue;  // No new bytes, so continue the loop to try and fetch new bytes
       }
 
       // We do have a packet here
@@ -105,10 +77,6 @@ bool Packetizer::hasPacket() {
     }
 
     // We have new bytes
-    TimeMicroseconds_t timeSinceFunctionStart = currentTime - functionStartTime;
-    if(timeSinceFunctionStart > maxReadTimeout) {
-      return hasPacket;  // Whatever we've found so far, we're letting the caller know about it
-    }
 
     size_t oldStartIndex = startIndex;
     hasPacket = hasPacketNow();
